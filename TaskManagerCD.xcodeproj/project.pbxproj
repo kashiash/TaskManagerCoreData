@@ -11,15 +11,17 @@
 		762530FE2C021BB900CD82DE /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 762530FD2C021BB900CD82DE /* ContentView.swift */; };
 		762531002C021BBA00CD82DE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 762530FF2C021BBA00CD82DE /* Assets.xcassets */; };
 		762531042C021BBA00CD82DE /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 762531032C021BBA00CD82DE /* Preview Assets.xcassets */; };
+		7625310C2C021FFF00CD82DE /* Main.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 7625310A2C021FFF00CD82DE /* Main.xcdatamodeld */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		762530F82C021BB900CD82DE /* TaskManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TaskManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		762530F82C021BB900CD82DE /* TaskManagerCD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TaskManagerCD.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		762530FB2C021BB900CD82DE /* TaskManagerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManagerApp.swift; sourceTree = "<group>"; };
 		762530FD2C021BB900CD82DE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		762530FF2C021BBA00CD82DE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		762531012C021BBA00CD82DE /* TaskManager.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TaskManager.entitlements; sourceTree = "<group>"; };
 		762531032C021BBA00CD82DE /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		7625310B2C021FFF00CD82DE /* Main.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Main.xcdatamodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -44,7 +46,7 @@
 		762530F92C021BB900CD82DE /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				762530F82C021BB900CD82DE /* TaskManager.app */,
+				762530F82C021BB900CD82DE /* TaskManagerCD.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -57,6 +59,7 @@
 				762530FF2C021BBA00CD82DE /* Assets.xcassets */,
 				762531012C021BBA00CD82DE /* TaskManager.entitlements */,
 				762531022C021BBA00CD82DE /* Preview Content */,
+				7625310A2C021FFF00CD82DE /* Main.xcdatamodeld */,
 			);
 			path = TaskManager;
 			sourceTree = "<group>";
@@ -72,9 +75,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		762530F72C021BB900CD82DE /* TaskManager */ = {
+		762530F72C021BB900CD82DE /* TaskManagerCD */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 762531072C021BBA00CD82DE /* Build configuration list for PBXNativeTarget "TaskManager" */;
+			buildConfigurationList = 762531072C021BBA00CD82DE /* Build configuration list for PBXNativeTarget "TaskManagerCD" */;
 			buildPhases = (
 				762530F42C021BB900CD82DE /* Sources */,
 				762530F52C021BB900CD82DE /* Frameworks */,
@@ -84,9 +87,9 @@
 			);
 			dependencies = (
 			);
-			name = TaskManager;
+			name = TaskManagerCD;
 			productName = TaskManager;
-			productReference = 762530F82C021BB900CD82DE /* TaskManager.app */;
+			productReference = 762530F82C021BB900CD82DE /* TaskManagerCD.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -104,7 +107,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 762530F32C021BB900CD82DE /* Build configuration list for PBXProject "TaskManager" */;
+			buildConfigurationList = 762530F32C021BB900CD82DE /* Build configuration list for PBXProject "TaskManagerCD" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -117,7 +120,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				762530F72C021BB900CD82DE /* TaskManager */,
+				762530F72C021BB900CD82DE /* TaskManagerCD */,
 			);
 		};
 /* End PBXProject section */
@@ -139,6 +142,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7625310C2C021FFF00CD82DE /* Main.xcdatamodeld in Sources */,
 				762530FE2C021BB900CD82DE /* ContentView.swift in Sources */,
 				762530FC2C021BB900CD82DE /* TaskManagerApp.swift in Sources */,
 			);
@@ -340,7 +344,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		762530F32C021BB900CD82DE /* Build configuration list for PBXProject "TaskManager" */ = {
+		762530F32C021BB900CD82DE /* Build configuration list for PBXProject "TaskManagerCD" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				762531052C021BBA00CD82DE /* Debug */,
@@ -349,7 +353,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		762531072C021BBA00CD82DE /* Build configuration list for PBXNativeTarget "TaskManager" */ = {
+		762531072C021BBA00CD82DE /* Build configuration list for PBXNativeTarget "TaskManagerCD" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				762531082C021BBA00CD82DE /* Debug */,
@@ -359,6 +363,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		7625310A2C021FFF00CD82DE /* Main.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				7625310B2C021FFF00CD82DE /* Main.xcdatamodel */,
+			);
+			currentVersion = 7625310B2C021FFF00CD82DE /* Main.xcdatamodel */;
+			name = Main.xcdatamodeld;
+			path = "/Users/uta/Desktop/biezace projekty/TaskManager/TaskManager/Main.xcdatamodeld";
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
 	};
 	rootObject = 762530F02C021BB900CD82DE /* Project object */;
 }
