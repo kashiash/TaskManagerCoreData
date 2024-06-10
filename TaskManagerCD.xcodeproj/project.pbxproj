@@ -12,6 +12,7 @@
 		762531002C021BBA00CD82DE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 762530FF2C021BBA00CD82DE /* Assets.xcassets */; };
 		762531042C021BBA00CD82DE /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 762531032C021BBA00CD82DE /* Preview Assets.xcassets */; };
 		7625310C2C021FFF00CD82DE /* Main.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 7625310A2C021FFF00CD82DE /* Main.xcdatamodeld */; };
+		768FD9812C123F0000EA0125 /* DataController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 768FD9802C123F0000EA0125 /* DataController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +23,7 @@
 		762531012C021BBA00CD82DE /* TaskManager.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TaskManager.entitlements; sourceTree = "<group>"; };
 		762531032C021BBA00CD82DE /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		7625310B2C021FFF00CD82DE /* Main.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Main.xcdatamodel; sourceTree = "<group>"; };
+		768FD9802C123F0000EA0125 /* DataController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +62,7 @@
 				762531012C021BBA00CD82DE /* TaskManager.entitlements */,
 				762531022C021BBA00CD82DE /* Preview Content */,
 				7625310A2C021FFF00CD82DE /* Main.xcdatamodeld */,
+				768FD9802C123F0000EA0125 /* DataController.swift */,
 			);
 			path = TaskManager;
 			sourceTree = "<group>";
@@ -143,6 +146,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7625310C2C021FFF00CD82DE /* Main.xcdatamodeld in Sources */,
+				768FD9812C123F0000EA0125 /* DataController.swift in Sources */,
 				762530FE2C021BB900CD82DE /* ContentView.swift in Sources */,
 				762530FC2C021BB900CD82DE /* TaskManagerApp.swift in Sources */,
 			);
