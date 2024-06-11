@@ -18,6 +18,7 @@
 		76B2413A2C18B3EB00908527 /* Filter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B241392C18B3EB00908527 /* Filter.swift */; };
 		76B2413C2C18C0FA00908527 /* Issue-CoreDataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B2413B2C18C0FA00908527 /* Issue-CoreDataHelpers.swift */; };
 		76B2413E2C18C18100908527 /* Tag-CoreDataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B2413D2C18C18100908527 /* Tag-CoreDataHelpers.swift */; };
+		76B241402C18CC8C00908527 /* IssueRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B2413F2C18CC8C00908527 /* IssueRow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +36,7 @@
 		76B241392C18B3EB00908527 /* Filter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Filter.swift; sourceTree = "<group>"; };
 		76B2413B2C18C0FA00908527 /* Issue-CoreDataHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Issue-CoreDataHelpers.swift"; sourceTree = "<group>"; };
 		76B2413D2C18C18100908527 /* Tag-CoreDataHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tag-CoreDataHelpers.swift"; sourceTree = "<group>"; };
+		76B2413F2C18CC8C00908527 /* IssueRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueRow.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,6 +77,7 @@
 				762531022C021BBA00CD82DE /* Preview Content */,
 				7625310A2C021FFF00CD82DE /* Main.xcdatamodeld */,
 				768FD9802C123F0000EA0125 /* DataController.swift */,
+				76B2413F2C18CC8C00908527 /* IssueRow.swift */,
 				76B241352C18B28500908527 /* SidebarView.swift */,
 				762530FD2C021BB900CD82DE /* ContentView.swift */,
 				76B241372C18B2D000908527 /* DetailView.swift */,
@@ -170,6 +173,7 @@
 				768FD9812C123F0000EA0125 /* DataController.swift in Sources */,
 				76B241362C18B28500908527 /* SidebarView.swift in Sources */,
 				762530FE2C021BB900CD82DE /* ContentView.swift in Sources */,
+				76B241402C18CC8C00908527 /* IssueRow.swift in Sources */,
 				762530FC2C021BB900CD82DE /* TaskManagerApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

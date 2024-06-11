@@ -909,3 +909,259 @@ Posiadanie tych pomocników ułatwi budowanie reszty tego projektu. W rzeczywist
 ```
 
 To pokazuje liczbę aktywnych `Issue` przypisanych do każdego tagu tuż obok niego w pasku bocznym – naprawdę miły sposób na zobaczenie, jak bardzo każdy z twoich tagów jest obciążony. Już napisaliśmy kod do tworzenia całej gromady przykładowych tagów i zadań, więc powinieneś zobaczyć, że te odznaki zaczynają działać od razu!
+
+## Pokazywanie, usuwanie i synchronizacja zadań
+Teraz, gdy mamy już podstawowy szkic naszego paska bocznego, możemy przejść do kolejnego poziomu naszego interfejsu użytkownika: widoku treści, wyświetlającego listę wszystkich wybranych przez nich zadań, a następnie upewnić się, że zmiany dokonane przez użytkownika są zsynchronizowane na wszystkich urządzeniach.
+
+### Szybkie linki
+
+- Co powinniśmy pokazać?
+- Poprawa wierszy zadań
+- Usuwanie zadań i tagów
+- Jak powinniśmy scalać zmiany?
+- Obserwowanie zewnętrznych zmian
+
+### Co powinniśmy pokazać?
+
+Pierwszym krokiem w tym zadaniu jest określenie, które zadania pokazać dla danego wyboru w pasku bocznym. Jeśli pamiętasz, nasz pasek boczny pokazuje dwa różne typy danych: tagi utworzone przez użytkownika lub inteligentne skrzynki pocztowe, które zapożyczamy z Feedback Assistant Apple.
+
+Zebraliśmy to wszystko w pojedynczy typ Filter, abyśmy mogli mieć wybór w obu typach, ale teraz nadszedł czas, aby sprawić, by zachowywały się inaczej: jeśli szukamy konkretnego tagu, powinniśmy od razu zwrócić wszystkie jego zadania, w przeciwnym razie wykonamy zapytanie fetch, aby zwrócić wszystkie zadania i zamiast tego zwrócimy je.
+
+Najpierw dodaj nową właściwość do ContentView, abyśmy mieli dostęp do naszego kontrolera danych:
+
+```swift
+@EnvironmentObject var dataController: DataController
+```
+
+Teraz dodaj tę nową właściwość do tego samego widoku:
+
+```swift
+var issues: [Issue] {
+    let filter = dataController.selectedFilter ?? .all
+    var allIssues: [Issue]
+
+    if let tag = filter.tag {
+        allIssues = tag.issues?.allObjects as? [Issue] ?? []
+    } else {
+        let request = Issue.fetchRequest()
+        allIssues = (try? dataController.container.viewContext.fetch(request)) ?? []
+    }
+
+    return allIssues.sorted()
+}
+```
+
+Zauważ dwie operacje obsługi wartości nil (zwane “null coalescing”), używane z Core Data: jedna, ponieważ przechowuje naszą relację z zadaniami jako NSSet, więc musimy ją ostrożnie konwertować, a druga, ponieważ wykonanie zapytania fetch może się nie powieść. Chodzi o to, że zamykamy cały bałagan Core Data w jednym miejscu, co pozwala reszcie naszego kodu być znacznie czystszym.
+
+Ta prosta właściwość wystarcza, aby odróżnić tagi użytkowników od naszych inteligentnych filtrów, ale potrzebujemy czegoś nieco bardziej szczegółowego, ponieważ nasze dwa inteligentne filtry zachowują się nieco inaczej - jeden pokazuje wszystkie zadania, a drugi pokazuje ostatnie zadania.
+
+Więc zamiast wydawać proste zapytanie fetch dla wszystkich zadań, zastosujemy predykat, aby filtrować to zapytanie na podstawie daty modyfikacji, którą dołączyliśmy do filtra. Już nadaliśmy naszym zakodowanym na stałe filtrom wartości dla tego, więc to tylko kwestia przesłania go do zapytania fetch przy użyciu dość „unikalnej” składni Core Data - dodaj to bezpośrednio po linii let request = Issue.fetchRequest():
+
+```swift
+request.predicate = NSPredicate(format: "modificationDate > %@", filter.minModificationDate as NSDate)
+```
+
+To mówi Core Data, aby dopasował tylko zadania, które zostały zmodyfikowane od minimalnej daty modyfikacji naszego filtra. Część as NSDate jest niestety wymagana, ponieważ Core Data nie rozumie typu Date w Swift i potrzebuje starszego typu NSDate zamiast tego.
+
+Dodamy więcej do tego kodu później, ale na razie chcę go użyć, abyś mógł zobaczyć, jak działa - zmień właściwość body w ContentView na tę:
+
+```swift
+List {
+    ForEach(issues) { issue in
+        Text(issue.issueTitle)
+    }
+}
+.navigationTitle("Zadania")
+```
+
+To nie jest dużo, ale powinieneś być w stanie uruchomić kod i zobaczyć działające wyniki – każdy z testowych tagów powinien pokazywać 10 zadań, a filtr Wszystkie Zadania powinien pokazywać wszystkie 50.
+
+### Poprawa wierszy zadań
+To dość nudne pokazywać tylko tytuły zadań w ContentView, więc zamierzamy to poprawić, wprowadzając nowy widok SwiftUI do reprezentowania jednego wiersza na liście, nadając mu znacznie bardziej interesujący i użyteczny układ.
+
+Najpierw utwórz nowy widok SwiftUI o nazwie `IssueRow`, a następnie nadaj mu te dwie właściwości:
+
+```swift
+@EnvironmentObject var dataController: DataController
+@ObservedObject var issue: Issue
+```
+
+Pierwsza z nich zostanie przekazana przez nasze środowisko, ale druga musi być przekazana jawnie. Jeśli używasz podglądów Xcode, powinieneś zmodyfikować swój kod podglądu, aby przekazywał przykładowe zadanie, tak jak poniżej:
+
+```swift
+static var previews: some View {
+    IssueRow(issue: .example)
+}
+```
+
+Należy jednak pamiętać, że Core Data zachowuje się dość źle z podglądami – nie zdziw się, jeśli to działa dziwnie lub wcale.
+
+W IssueRow umieścimy sporo informacji, aby użytkownicy mogli szybko ocenić aktualny status, przeglądając wiersze:
+
+- Tytuł zadania
+- Lista tagów dołączonych do zadania
+- Data utworzenia zadania
+- Czy zostało zamknięte
+- Czy jest to zadanie o wysokim priorytecie
+
+Najważniejsze, że zawiążemy to wszystko w inny link nawigacyjny, który ostatecznie załaduje odpowiedni widok szczegółowy dla zadania.
+
+Zacznij od zamiany właściwości body na tę:
+
+```swift
+NavigationLink(value: issue) {
+    HStack {
+        Image(systemName: "exclamationmark.circle")
+            .imageScale(.large)
+            .opacity(issue.priority == 2 ? 1 : 0)
+
+        VStack(alignment: .leading) {
+            Text(issue.issueTitle)
+                .font(.headline)
+                .lineLimit(1)
+
+            Text("Brak tagów")
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+
+        Spacer()
+
+        // więcej kodu
+    }
+}
+```
+
+Jak widzisz, to nie jest cały widok, ale wystarczy, aby przerwać i wyjaśnić, co dodaliśmy.
+
+Po pierwsze, bez względu na priorytet zadania, zawsze pokazujemy symbol „exclamationmark.circle” obok niego. Jeśli zadanie ma wysoki priorytet, to sprawiamy, że jest widoczne, w przeciwnym razie ma ono przezroczystość 0, więc w ogóle się nie pojawia. Może się to wydawać marnotrawne, ale pokazanie niewidocznego obrazu jest znacznie lepsze niż nie pokazywanie niczego, ponieważ zapewnia, że wszystkie nasze wiersze mają spójne odstępy – jeśli całkowicie wykluczylibyśmy widok obrazu, reszta wiersza przesunęłaby się w lewo, aby wypełnić przestrzeń, i wyglądałoby to na dość zagmatwane.
+
+Po drugie, dodałem stały limit linii 1 zarówno dla tytułu, jak i tagów, co skróci długie tytuły i tagi. To kolejny prosty sposób na wymuszenie spójności w naszym interfejsie użytkownika: zamiast niektórych wierszy wyższych niż inne, zmuszamy wszystkie wiersze do tej samej wysokości, aby użytkownik mógł szybciej je przeglądać.
+
+Jeśli wolisz, możesz użyć lineLimit(2...2) dla tagów, co oznacza „przydziel dokładnie 2 linie miejsca na ten tekst” – to znacznie zmniejszy szanse na przycięcie listy tagów, jednocześnie zachowując spójną wysokość.
+
+Na koniec użyłem separatora (spacer) na końcu widoku, aby reszta naszego układu została przesunięta na przeciwną stronę. To odpowiada temu, co robi Feedback Assistant.
+
+Mówiąc o reszcie naszego układu, zastąpimy komentarz // więcej kodu kodem, który pokazuje, kiedy zadanie zostało utworzone i czy jest zamknięte, czy nie – wstaw to w jego miejsce:
+
+```swift
+VStack(alignment: .trailing) {
+    Text(issue.issueCreationDate.formatted(date: .numeric, time: .omitted))
+        .font(.subheadline)
+
+    if issue.completed {
+        Text("ZAMKNIĘTE")
+            .font(.body.smallCaps())
+    }
+}
+.foregroundStyle(.secondary)
+```
+
+To pokazuje datę utworzenia w formacie odpowiadającym Feedback Assistant i dodaje „ZAMKNIĘTE” poniżej w razie potrzeby. Czcionka małych liter również jest tam, aby dopasować się do Feedback Assistant, ale możesz ją dostosować, jeśli chcesz.
+
+Teraz, gdy mamy dobrze wyglądający widok wiersza zadania, możemy wrócić do ContentView i zmienić jego kod ForEach, aby go użyć:
+
+```swift
+ForEach(issues) { issue in
+    IssueRow(issue: issue)
+}
+```
+
+To duża poprawa! Zobaczysz błędy drukowane, gdy spróbujesz wybrać zadanie, ale to tylko dlatego, że jeszcze nie napisaliśmy widoku szczegółowego.
+
+### Usuwanie zadań i tagów
+Teraz, gdy możemy zobaczyć wszystkie nasze tagi i zadania, następnym logicznym krokiem jest dodanie obsługi usuwania tych tagów i zadań. Już dodaliśmy metodę delete() do naszej klasy kontrolera danych, więc możemy ją wywołać zarówno z SidebarView, jak i ContentView, aby usunąć tagi i zadania.
+
+Na przykład w SidebarView możemy dodać wsparcie dla usuwania przez przesunięcie, z nową metodą delete():
+
+```swift
+func delete(_ offsets: IndexSet) {
+    for offset in offsets {
+        let item = tags[offset]
+        dataController.delete(item)
+    }
+}
+```
+
+Następnie możemy wywołać to dla tagów użytkownika, dodając modyfikator onDelete() do ForEach(tagFilters):
+
+```swift
+.onDelete(perform: delete)
+```
+
+To będzie działać świetnie od razu, co oznacza, że użytkownicy mogą teraz dodawać i usuwać tagi swobodnie.
+
+Podobnie jest w ContentView, co oznacza, że możemy zacząć od dodania tam metody delete():
+
+```swift
+func delete(_ offsets: IndexSet) {
+    for offset in offsets {
+        let item = issues[offset]
+        dataController.delete(item)
+    }
+}
+```
+
+Następnie dodanie modyfikatora onDelete() do ForEach:
+
+```swift
+.onDelete(perform: delete)
+```
+
+To wszystko, co trzeba, aby uzyskać funkcję przesunięcia do usuwania w obu miejscach – super!
+
+### Jak powinniśmy scalać zmiany?
+Teraz, gdy nasz użytkownik może dokonywać zmian w aplikacji, musimy ponownie przyjrzeć się naszej stosie Core Data. Teraz powiedzieliśmy mu, aby udostępniał dane do iCloud, co oznacza, że kiedy uruchomisz aplikację, automatycznie pobierze wszelkie zmiany dokonane przez użytkownika na innym urządzeniu. Ale nie powiedzieliśmy Core Data, co zrobić, jeśli zmiany nastąpią, gdy nasza aplikacja jest uruchomiona – jeśli mamy dwa urządzenia uruchomione naszą aplikacją jednocześnie.
+
+Idealnym rozwiązaniem tutaj jest to, aby nasze dane synchronizowały się bezproblemowo: aby nasze interfejsy użytkownika aktualizowały się natychmiast, gdy pojawią się zmiany, zamiast czekać, aż użytkownik ponownie uruchomi aplikację.
+
+Aby to się stało, musimy poprosić Core Data o wykonanie co najmniej dwóch rzeczy dla nas:
+
+- Automatyczne stosowanie do naszego kontekstu widoku wszelkich zmian, które zachodzą w podstawowym magazynie trwałym, aby oba pozostały zsynchronizowane.
+- Poinformowanie Core Data, jak obsługiwać scalanie danych lokalnych i zdalnych.
+
+Pierwsze z nich jest trywialne, ponieważ możemy włączyć właściwość Boolean w naszym zarządzanym kontekście widoku, aby Core Data wykonała pracę za nas. Dodaj to do inicjalizatora DataController, przed wywołaniem loadPersistentStores():
+
+```swift
+container.viewContext.automaticallyMergesChangesFromParent = true
+```
+
+Drugie jest tylko trochę trudniejsze: Core Data może obsługiwać scalanie za nas, ale chce wiedzieć, jak powinno się to odbywać.
+
+Czasami wybór jest prosty: jeśli dane lokalne były zmieniane bardziej niedawno niż dane zdalne, możemy założyć, że dane lokalne powinny mieć pierwszeństwo. Jednak jeśli różne części twoich danych są niezależne – jeśli jeden atrybut w twoim podmiocie nie zależy od innego – wtedy lepszą opcją jest użycie scalania właściwości, co pozwala Core Data łączyć zmiany z lokalnego obiektu ze zmianami z zdalnego obiektu na podstawie każdej właściwości z osobna.
+
+Na przykład, jeśli zmieniłeś tytuł zadania na „Ważna poprawka VoiceOver”, a następnie szybko przeszedłeś na inne urządzenie i zmieniłeś priorytet tego samego zadania na wysoki, Core Data będzie mogła zachować te dwie zmiany na obu urządzeniach.
+
+To nadal pozostawia mały problem: co, jeśli zmieniliśmy tę samą właściwość na dwóch różnych urządzeniach? W takim przypadku musimy zdecydować, która jest poprawna, więc polityka scalania, której użyjemy, nazywa się „.mergeByPropertyObjectTrump” – oznacza to, że chcemy, aby Core Data porównała każdą właściwość z osobna, ale jeśli wystąpi konflikt, powinna preferować to, co jest aktualnie w pamięci.
+
+Dodaj tę linię kodu poniżej poprzedniej:
+
+```swift
+container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
+```
+
+### Obserwowanie zewnętrznych zmian
+Te dwie zmiany wystarczą, aby powiedzieć Core Data, jak zarządzać zewnętrznymi zmianami, ale podczas pracy na wielu urządzeniach potrzebujemy ważnego trzeciego kroku, aby upewnić się, że nasza synchronizacja jest naprawdę bezbłędna: chcemy być powiadamiani za każdym razem, gdy jakiekolwiek zapisy do naszego magazynu trwałego zostaną wykonane, abyśmy mogli zaktualizować nasz interfejs użytkownika.
+
+Ten ostatni punkt jest szczególnie interesujący, ponieważ pozwala nam wykrywać zmiany zachodzące poza naszym kodem i aktualizować nasz interfejs użytkownika. Na przykład, jeśli uruchamiasz aplikację zarówno na swoim iPhonie, jak i Macu, usunięcie zadania na iPhonie wyzwoli powiadomienie o zmianie na Macu, dzięki czemu obie aplikacje pozostaną całkowicie zsynchronizowane.
+
+Ta zmiana wymaga trochę więcej kodu, ponieważ musimy stworzyć metodę do uruchomienia, gdy nadejdzie powiadomienie o zmianie. Ponownie, to może pochodzić z dowolnego miejsca, w tym z iCloud, więc zagramy bezpiecznie: gdy nasze dane jakoś się zmienią, wydamy ogólne ogłoszenie o zmianie, a nasze widoki mogą odpowiedzieć, jak chcą.
+
+Najpierw dodaj tę metodę do DataController:
+
+```swift
+func remoteStoreChanged(_ notification: Notification) {
+    objectWillChange.send()
+}
+```
+
+A teraz dodaj te dwie linie kodu do inicjalizatora, bezpośrednio po linii polityki scalania:
+
+```swift
+container.persistentStoreDescriptions.first?.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
+NotificationCenter.default.addObserver(forName: .NSPersistentStoreRemoteChange, object: container.persistentStoreCoordinator, queue: .main, using: remoteStoreChanged)
+```
+
+Pierwsza z tych linii mówi Core Data, że chcemy być powiadamiani, gdy magazyn zostanie zmieniony, a druga mówi systemowi, aby wywoływał naszą nową metodę remoteStoreChanged() za każdym razem, gdy nastąpi zmiana.
+
+Kiedy wszystkie te zmiany zostaną połączone, powinieneś odkryć, że możesz uruchomić dwie kopie aplikacji na dwóch różnych urządzeniach i utrzymać je całkowicie zsynchronizowane – Core Data wykonuje tutaj ogromną ilość pracy za nas!
