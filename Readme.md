@@ -726,7 +726,7 @@ extension Issue {
 
 I szczerze mówiąc, to w pewnym sensie działa – teraz można bezpośrednio odczytać tytuł, zamiast używać operacji łączenia nil.
 
-Jednak, choć to rozwiązanie może działać dla uczących się lub małych projektów, myślę, że w dłuższej perspektywie powoduje wiele zadań.
+Jednak, choć to rozwiązanie może działać dla uczących się lub małych projektów, myślę, że w dłuższej perspektywie powoduje wiele innych problemów.
 
 Po pierwsze, z perspektywy Swift używanie nieopcjonalnych tutaj daje ci pewność, której tak naprawdę nie masz. Podstawowe dane mogą być nulowe i zostaną załadowane jako nulowe, ale wtedy zmuszasz je do kontenera, który nie jest nulowy, i używasz go natychmiast. W regularnym kodzie Swift używanie nieopcjonalnego jest gwarantowane jako bezpieczne, ponieważ wiemy, że ma wartość, ale tutaj naprawdę nie wiem, co dostaniesz – może działać dobrze przez pierwsze tysiąc razy, ale potem niewytłumaczalnie przestanie działać w produkcji na konkretnej konfiguracji urządzenia.
 
@@ -889,6 +889,7 @@ extension Tag: Comparable {
 I to kończy nasz kod pomocniczy dla Core Data!
 
 ### Uproszczenie interfejsu użytkownika
+
 Dzięki wprowadzonym zmianom możemy wrócić do `SidebarView.swift` i zastosować to wszystko w naszym kodzie: oba przypadki nil coalescing mogą zostać usunięte, jak w poniższym przykładzie:
 
 ```swift
