@@ -657,3 +657,254 @@ git commit -m "Initial commit."
 ```
 
 To zapisuje wszystko, co zostało dodane, więc jest to teraz bezpieczne w Git. Jeśli chcesz, możesz na tym zakończyć: umieściłeś swój kod w lokalnym repozytorium Git, co oznacza, że jeśli kiedykolwiek będziesz musiał wrócić do starszej wersji swojego kod
+
+### Czyszczenie Core Data
+Opcjonalność wartości Core Data różnią się od opcji w Swift, co sprawia, że praca z nimi może być nieco niewygodna. W tym artykule pokażę dwa sposoby rozwiązania tego problemu, które pomogą nam ładnie uporządkować nasz kod.
+
+
+
+### Szybkie linki
+- Jaki jest problem?
+- Tworzenie niestandardowych rozszerzeń
+- Czyszczenie zbiorów
+- Uproszczenie interfejsu użytkownika
+
+### Jaki jest problem?
+Jak wspomniałem wcześniej, pojęcie opcjonalności w Core Data jest bardzo różne od opcjonalności w Swift – jeśli atrybut Core Data jest ustawiony jako nieopcjonalny, może on nadal być `nil` tak długo, jak długo przed wywołaniem `save()` ma wartość. Natomiast nieopcjonalna właściwość w Swift musi mieć wartość przez cały czas.
+
+Gdy masz do czynienia z bardzo prostymi implementacjami Core Data lub jeśli dopiero się uczysz, najczęstszym sposobem na usunięcie opcjonalności Core Data jest ręczne usunięcie opcji.
+
+Pokażę ci, jak to się robi, ale nie chcę, żebyś to robił. Ta technika może wydawać się wystarczająco skuteczna, ale wiąże się z różnymi wadami, które omówię wkrótce.
+
+Jeśli chciałbyś usunąć opcjonalność swoich danych, zacząłbyś od ponownego otwarcia modelu Core Data, wybrania obu swoich encji, a następnie użycia inspektora modelu danych do zmiany Codegen z Class Definition na None. „Codegen” to sposób, w jaki Xcode syntetyzuje dla nas klasy Issue i Tag, a my właśnie to wyłączyliśmy.
+
+Zamiast pozwolić Xcode na syntetyzowanie klas, zamierzamy uczynić je prawdziwymi klasami z prawdziwym kodem, który możemy edytować. Aby to zrobić, przejdź do menu Editor i wybierz Create NSManagedObject Subclass. Zostaniesz poproszony o wybranie modelu, ale Main jest już wybrany, więc kliknij Next. Następnie zostaniesz poproszony o wybranie encji, którymi chcesz zarządzać, i znów obie nasze encje są wybrane, więc możesz kliknąć Next ponownie. Na końcu możesz zdecydować, gdzie umieścić swoje pliki, a następnie kliknij Create.
+
+Ponownie, nie chcę, żebyś to robił, ponieważ zaraz z tego zrezygnujemy!
+
+Po zakończeniu procesu zobaczysz, że Xcode wygenerował dla ciebie cztery pliki: klasę i rozszerzenie dla Issue oraz klasę i rozszerzenie dla Tag. Każda z naszych encji otrzymuje dwa pliki, ponieważ daje nam to pewien stopień personalizacji: plik właściwości zawiera całą funkcjonalność potrzebną Core Data do działania, w tym właściwości i metody, które odczytują i zapisują atrybuty encji, ale plik klasy jest pusty, ponieważ jest przeznaczony do personalizacji zgodnie z naszymi potrzebami.
+
+To rozróżnienie staje się ważne, jeśli chcesz później wprowadzić zmiany w swoim modelu Core Data, ponieważ podczas ponownego tworzenia NSManagedObject subclass Xcode nadpisuje tylko pliki właściwości – pliki klasy, wraz z wszelkimi wprowadzonymi zmianami, pozostają nienaruszone.
+
+Co nas tutaj interesuje, to plik właściwości, a wewnątrz Issue+CoreDataProperties.swift zobaczysz około 40 linii kodu, w tym to:
+
+```swift
+extension Issue { 
+    @nonobjc public class func fetchRequest() -> NSFetchRequest<Issue> {
+        return NSFetchRequest<Issue>(entityName: "Issue")
+    }
+
+    @NSManaged public var completed: Bool
+    @NSManaged public var content: String?
+    @NSManaged public var creationDate: Date?
+    @NSManaged public var modificationDate: Date?
+    @NSManaged public var priority: Int16
+    @NSManaged public var title: String?
+    @NSManaged public var tags: NSSet?
+}
+```
+
+Widać tutaj problem z opcjonalnością, ale także kilka atrybutów @NSManaged. To może wyglądać jak wrapper właściwości, ale w rzeczywistości jest to specjalny atrybut, który oznacza „Core Data zajmie się tym.” Tak więc, zamiast `completed` być prostą wartością logiczną, automatycznie odczytuje i zapisuje dane z bazy danych, powiadamiając kontekst, gdy zachodzą zmiany, i wiele więcej.
+
+Teraz przejdziemy do niezalecanego rozwiązania: wiele osób po prostu usunie wszystkie znaki zapytania i to wszystko, jak w poniższym przykładzie:
+
+```swift
+extension Issue { 
+    @nonobjc public class func fetchRequest() -> NSFetchRequest<Issue> {
+        return NSFetchRequest<Issue>(entityName: "Issue")
+    }
+
+    @NSManaged public var completed: Bool
+    @NSManaged public var content: String
+    @NSManaged public var creationDate: Date
+    @NSManaged public var modificationDate: Date
+    @NSManaged public var priority: Int16
+    @NSManaged public var title: String
+    @NSManaged public var tags: NSSet
+}
+```
+
+I szczerze mówiąc, to w pewnym sensie działa – teraz można bezpośrednio odczytać tytuł, zamiast używać operacji łączenia nil.
+
+Jednak, choć to rozwiązanie może działać dla uczących się lub małych projektów, myślę, że w dłuższej perspektywie powoduje wiele problemów.
+
+Po pierwsze, z perspektywy Swift używanie nieopcjonalnych tutaj daje ci pewność, której tak naprawdę nie masz. Podstawowe dane mogą być nulowe i zostaną załadowane jako nulowe, ale wtedy zmuszasz je do kontenera, który nie jest nulowy, i używasz go natychmiast. W regularnym kodzie Swift używanie nieopcjonalnego jest gwarantowane jako bezpieczne, ponieważ wiemy, że ma wartość, ale tutaj naprawdę nie wiem, co dostaniesz – może działać dobrze przez pierwsze tysiąc razy, ale potem niewytłumaczalnie przestanie działać w produkcji na konkretnej konfiguracji urządzenia.
+
+Po drugie, za każdym razem, gdy dostosowujesz swój model i regenerujesz klasy Core Data, wprowadzone przez ciebie zmiany zostaną utracone. Tak, Core Data nie nadpisze zmian w pliku klasy, ale bez problemu usunie wszystkie, które wprowadziłeś w pliku właściwości – w tym usunięcie opcjonalności. Ale to działa także w drugą stronę: jeśli Apple poprawi swoją syntezę klas w przyszłości, nie skorzystasz z tych ulepszeń, chyba że wiesz, że musisz ponownie utworzyć klasę.
+
+Po trzecie, odczyt tagów przypisanych do problemu odbywa się poprzez opcjonalny NSSet, co jest, szczerze mówiąc, okropne. Nie tylko musimy używać opcjonalnego łączenia, aby odczytać obiekty w właściwości tagów, ale NSSet nie wie, że przechowuje instancje Tag, więc potrzebujemy opcjonalnego rzutowania typu, co z kolei oznacza, że musimy użyć nil coalescing, aby bezpiecznie zapewnić domyślną wartość.
+
+Wreszcie, ważne jest, aby pamiętać, że majstrujesz przy wewnętrznych mechanizmach Core Data. Oczekuje ona, że te właściwości będą opcjonalne, a zmiana ich w sposób, który jej nie przewidział, nie wydaje się dobrym pomysłem – tak, może działać przez rok lub dwa, ale co, jeśli coś się zmieni w przyszłości?
+
+Dlatego nie będziemy używać tego podejścia. Zamiast tego, usunę te cztery pliki wygenerowane przez Xcode, a następnie w edytorze modelu zmienię Codegen z powrotem na Class Definition, przywracając nas do sytuacji, którą mieliśmy wcześniej – mnóstwo opcjonalnych.
+
+### Tworzenie niestandardowych rozszerzeń
+Jeśli chcę obejść opcjonalność Core Data w bezpieczniejszy, bardziej utrzymywalny sposób, prawie zawsze wolę robić to za pomocą rozszerzeń, które zawierają całą pracę związaną z nil coalescing w jednym miejscu.
+
+To podejście, które będziemy tutaj stosować, więc proszę, postępuj zgodnie z instrukcjami.
+
+Zacznij od utworzenia nowego pliku Swift o nazwie `Issue-CoreDataHelpers.swift` i dodaj do niego następujący kod:
+
+```swift
+extension Issue {
+    var issueTitle: String {
+        get { title ?? "" }
+        set { title = newValue }
+    }
+
+    var issueContent: String {
+        get { content ?? "" }
+        set { content = newValue }
+    }
+
+    var issueCreationDate: Date {
+        creationDate ?? .now
+    }
+
+    var issueModificationDate: Date {
+        modificationDate ?? .now
+    }
+}
+```
+
+To jest podobne do pracy, którą wykonywaliśmy w SidebarView, z dwoma ważnymi zmianami:
+- Teraz mamy gettery i settery dla kilku właściwości, co pozwala nam je bezpośrednio modyfikować.
+- Wszystkie opcjonalne są rozwiązywane w jednym miejscu, tutaj w tym rozszerzeniu, zamiast rozpraszać je po reszcie naszego projektu.
+
+Nie ma różnicy w wydajności, ponieważ ostatecznie odczytywanie wartości odbywa się za pomocą tego samego kodu, ale jest to znacznie przyjemniejsze w użyciu i to ma duże znaczenie.
+
+Możesz zauważyć, że przyjąłem prosty i spójny schemat nazewnictwa dla tych rozszerzonych właściwości: `title` staje się `issueTitle`, `content` staje się `issueContent` i tak dalej. To sprawia, że łatwiej jest zapamiętać, która właściwość jest oryginalną, opcjonalną właściwością, a która jest rozszerzoną, rozpakowaną pomocą.
+
+Podczas pracy w tym pliku dodamy również statyczną właściwość example, która tworzy przykład elementu do celów podglądu SwiftUI. To może bazować na inMemory initializer dla DataController, więc przykłady są tylko tymczasowe:
+
+```swift
+static var example: Issue {
+    let controller = DataController(inMemory: true)
+    let viewContext = controller.container.viewContext
+
+    let issue = Issue(context: viewContext)
+    issue.title = "Example Issue"
+    issue.content = "This is an example issue."
+    issue.priority = 2
+    issue.creationDate = .now
+    return issue
+}
+```
+
+To nasze pomocniki dla `Issue` gotowe, teraz zajmijmy się odpowiednikami dla `Tag`. Zacznij od utworzenia nowego pliku Swift o nazwie `Tag-CoreDataHelpers.swift` i dodaj do niego ten kod:
+
+```swift
+extension Tag {
+    var tagID: UUID {
+        id ?? UUID()
+    }
+
+    var tagName: String {
+        name ?? ""
+    }
+}
+```
+
+To robi to samo, co w przypadku `Issue`: zwraca bieżącą wartość, jeśli istnieje, w przeciwnym razie zapewnia sensowną wartość domyślną. Nie potrzebujemy tutaj setterów, ponieważ `Tag` są znacznie prostsze niż `Issue`.
+
+Tak jak w przypadku `Issue`, dodamy statyczną właściwość example, która tworzy przykładowy tag odpowiedni do użycia w podglądach SwiftUI, więc proszę dodaj to teraz:
+
+```swift
+static var example: Tag {
+    let controller = DataController(inMemory: true)
+    let viewContext = controller.container.viewContext
+
+    let tag = Tag(context: viewContext)
+    tag.id = UUID()
+    tag.name = "Example Tag"
+    return tag
+}
+```
+
+Te dwa małe pliki pomocnicze już dużo robią, aby uporządkować miejsca, gdzie SwiftUI i Core Data się spotykają, ale wciąż są dwie wyraźne nierówności na drodze: dwie instancje NSSet, które tworzą relacje między encjami `Issue` i `Tag`.
+
+### Czyszczenie zbiorów
+To, co mamy do tej pory, pozwoli nam już uporządkować nasz projekt, ale chcę dodać dwie kolejne właściwości obliczeniowe, które sprawiają, że dwie instancje NSSet są znacznie przyjemniejsze w użyciu.
+
+Po pierwsze, możemy dodać właściwość do klasy `Issue`, która pobiera wszystkie jej tagi ładnie posortowane:
+
+```swift
+var issueTags: [Tag] {
+    let result = tags?.allObjects as? [Tag] ?? []
+    return result.sorted()
+}
+```
+
+Jak widzisz, to wszystko zawiera w jednym miejscu: opcjonalne łączenie, konwersję na `[Any]`, warunkową konwersję na `[Tag]`, a następnie nil coalescing do pustej tablicy, jeśli któraś część tego nie powiodła się. Jednak dodatkowo sortuje wynik, aby tagi zawsze pojawiały się w spójnej kolejności, i ta część nie będzie działać – Swift nie wie, jak sortować obiekty `Tag`.
+
+Aby to naprawić, musimy sprawić, aby `Issue` przestrzegał protokołu `Comparable` – musimy powiedzieć Swift, jak porównać dwie instancje `Issue`, aby wiedział, która z nich powinna być pierwsza w posortowanej tablicy. Jak sortujesz problemy, zależy od ciebie, ale najważniejsze jest to, aby wynik był stabilny: przy danych wejściowych A, twój kod powinien zawsze produkować wynik B, w przeciwnym razie twój interfejs użytkownika będzie mylący, ponieważ problemy będą się poruszać w pół-losowy sposób.
+
+Dla mojego projektu będę sortować problemy według ich tytułu, jeśli to możliwe, ale jeśli oba mają ten sam tytuł, będę sortować według daty utworzenia, aby zawsze mieć stabilną kolejność. Dodaj to do pliku `Issue-CoreDataHelpers.swift`:
+
+```swift
+extension Issue: Comparable {
+    public static func <(lhs: Issue, rhs: Issue) -> Bool {
+        let left = lhs.issueTitle.localizedLowercase
+        let right = rhs.issueTitle.localizedLowercase
+
+        if left == right {
+            return lhs.issueCreationDate < rhs.issueCreationDate
+        } else {
+            return left < right
+        }
+    }
+}
+```
+
+Drugi NSSet należy do klasy `Tag`, gdzie przechowuje wszystkie problemy przypisane do tagu. Tym razem potrzebujemy czegoś nieco innego, ponieważ będziemy tego używać do wyświetlania tylko aktywnych problemów – problemów, które nie zostały oznaczone jako zakończone.
+
+Dodaj to do pliku `Tag-CoreDataHelpers.swift`:
+
+```swift
+var tagActiveIssues: [Issue] {
+    let result = issues?.allObjects as? [Issue] ?? []
+    return result.filter { $0.completed == false }
+}
+```
+
+Chcę również, aby `Tag` przestrzegał protokołu `Comparable` tak jak zrobiliśmy to z `Issue`. Ponownie, ważne jest, aby sortowanie było stabilne, aby nasze tagi nie zmieniały kolejności bez uprzedzenia, więc będziemy sortować według nazwy tagu, jeśli to możliwe, lub według ID tagu. Tak, sortowanie według UUID jest dziwne, ponieważ te wartości są praktycznie losowe, ale tak naprawdę liczy się to, że sortowanie jest stabilne.
+
+Dodaj to do pliku `Tag-CoreDataHelpers.swift`:
+
+```swift
+extension Tag: Comparable {
+    public static func <(lhs: Tag, rhs: Tag) -> Bool {
+        let left = lhs.tagName.localizedLowercase
+        let right = rhs.tagName.localizedLowercase
+
+        if left == right {
+            return lhs.tagID.uuidString < rhs.tagID.uuidString
+        } else {
+            return left < right
+        }
+    }
+}
+```
+
+I to kończy nasz kod pomocniczy dla Core Data!
+
+### Uproszczenie interfejsu użytkownika
+Dzięki wprowadzonym zmianom możemy wrócić do `SidebarView.swift` i zastosować to wszystko w naszym kodzie: oba przypadki nil coalescing mogą zostać usunięte, jak w poniższym przykładzie:
+
+```swift
+var tagFilters: [Filter] {
+    tags.map { tag in
+        Filter(id: tag.tagID, name: tag.tagName, icon: "tag", tag: tag)
+    }
+}
+```
+
+Pamiętaj, że to w zasadzie wykonuje tę samą pracę, którą mieliśmy wcześniej, z tą różnicą, że teraz możemy upewnić się, że nasze problemy są zawsze sensownie posortowane, a także możemy upewnić się, że wszystkie wartości domyślne są przechowywane w jednym miejscu, aby uniknąć zamieszania.
+
+Posiadanie tych pomocników ułatwi budowanie reszty tego projektu. W rzeczywistości możemy uzyskać jedną szybką poprawę od razu – otwórz `SidebarView.swift`, a następnie znajdź `ForEach(tagFilters)` i dodaj następujący modyfikator do etykiety pokazującej nazwę i ikonę każdego tagu:
+
+```swift
+.badge(filter.tag?.tagActiveIssues.count ?? 0)
+```
+
+To pokazuje liczbę aktywnych problemów przypisanych do każdego tagu tuż obok niego w pasku bocznym – naprawdę miły sposób na zobaczenie, jak bardzo każdy z twoich tagów jest obciążony. Już napisaliśmy kod do tworzenia całej gromady przykładowych tagów i problemów, więc powinieneś zobaczyć, że te odznaki zaczynają działać od razu!

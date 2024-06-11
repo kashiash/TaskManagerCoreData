@@ -16,6 +16,8 @@
 		76B241362C18B28500908527 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B241352C18B28500908527 /* SidebarView.swift */; };
 		76B241382C18B2D000908527 /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B241372C18B2D000908527 /* DetailView.swift */; };
 		76B2413A2C18B3EB00908527 /* Filter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B241392C18B3EB00908527 /* Filter.swift */; };
+		76B2413C2C18C0FA00908527 /* Issue-CoreDataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B2413B2C18C0FA00908527 /* Issue-CoreDataHelpers.swift */; };
+		76B2413E2C18C18100908527 /* Tag-CoreDataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B2413D2C18C18100908527 /* Tag-CoreDataHelpers.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +33,8 @@
 		76B241352C18B28500908527 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
 		76B241372C18B2D000908527 /* DetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailView.swift; sourceTree = "<group>"; };
 		76B241392C18B3EB00908527 /* Filter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Filter.swift; sourceTree = "<group>"; };
+		76B2413B2C18C0FA00908527 /* Issue-CoreDataHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Issue-CoreDataHelpers.swift"; sourceTree = "<group>"; };
+		76B2413D2C18C18100908527 /* Tag-CoreDataHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tag-CoreDataHelpers.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +78,8 @@
 				76B241352C18B28500908527 /* SidebarView.swift */,
 				762530FD2C021BB900CD82DE /* ContentView.swift */,
 				76B241372C18B2D000908527 /* DetailView.swift */,
+				76B2413B2C18C0FA00908527 /* Issue-CoreDataHelpers.swift */,
+				76B2413D2C18C18100908527 /* Tag-CoreDataHelpers.swift */,
 			);
 			path = TaskManager;
 			sourceTree = "<group>";
@@ -157,7 +163,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				76B2413A2C18B3EB00908527 /* Filter.swift in Sources */,
+				76B2413E2C18C18100908527 /* Tag-CoreDataHelpers.swift in Sources */,
 				7625310C2C021FFF00CD82DE /* Main.xcdatamodeld in Sources */,
+				76B2413C2C18C0FA00908527 /* Issue-CoreDataHelpers.swift in Sources */,
 				76B241382C18B2D000908527 /* DetailView.swift in Sources */,
 				768FD9812C123F0000EA0125 /* DataController.swift in Sources */,
 				76B241362C18B28500908527 /* SidebarView.swift in Sources */,
