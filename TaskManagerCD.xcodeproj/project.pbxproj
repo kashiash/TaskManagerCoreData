@@ -19,6 +19,8 @@
 		76B2413C2C18C0FA00908527 /* Issue-CoreDataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B2413B2C18C0FA00908527 /* Issue-CoreDataHelpers.swift */; };
 		76B2413E2C18C18100908527 /* Tag-CoreDataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B2413D2C18C18100908527 /* Tag-CoreDataHelpers.swift */; };
 		76B241402C18CC8C00908527 /* IssueRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B2413F2C18CC8C00908527 /* IssueRow.swift */; };
+		76B241422C18E44500908527 /* NoIssueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B241412C18E44500908527 /* NoIssueView.swift */; };
+		76B241442C18E45200908527 /* IssueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B241432C18E45200908527 /* IssueView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +39,8 @@
 		76B2413B2C18C0FA00908527 /* Issue-CoreDataHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Issue-CoreDataHelpers.swift"; sourceTree = "<group>"; };
 		76B2413D2C18C18100908527 /* Tag-CoreDataHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tag-CoreDataHelpers.swift"; sourceTree = "<group>"; };
 		76B2413F2C18CC8C00908527 /* IssueRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueRow.swift; sourceTree = "<group>"; };
+		76B241412C18E44500908527 /* NoIssueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoIssueView.swift; sourceTree = "<group>"; };
+		76B241432C18E45200908527 /* IssueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,6 +84,8 @@
 				76B2413F2C18CC8C00908527 /* IssueRow.swift */,
 				76B241352C18B28500908527 /* SidebarView.swift */,
 				762530FD2C021BB900CD82DE /* ContentView.swift */,
+				76B241412C18E44500908527 /* NoIssueView.swift */,
+				76B241432C18E45200908527 /* IssueView.swift */,
 				76B241372C18B2D000908527 /* DetailView.swift */,
 				76B2413B2C18C0FA00908527 /* Issue-CoreDataHelpers.swift */,
 				76B2413D2C18C18100908527 /* Tag-CoreDataHelpers.swift */,
@@ -167,6 +173,7 @@
 			files = (
 				76B2413A2C18B3EB00908527 /* Filter.swift in Sources */,
 				76B2413E2C18C18100908527 /* Tag-CoreDataHelpers.swift in Sources */,
+				76B241422C18E44500908527 /* NoIssueView.swift in Sources */,
 				7625310C2C021FFF00CD82DE /* Main.xcdatamodeld in Sources */,
 				76B2413C2C18C0FA00908527 /* Issue-CoreDataHelpers.swift in Sources */,
 				76B241382C18B2D000908527 /* DetailView.swift in Sources */,
@@ -174,6 +181,7 @@
 				76B241362C18B28500908527 /* SidebarView.swift in Sources */,
 				762530FE2C021BB900CD82DE /* ContentView.swift in Sources */,
 				76B241402C18CC8C00908527 /* IssueRow.swift in Sources */,
+				76B241442C18E45200908527 /* IssueView.swift in Sources */,
 				762530FC2C021BB900CD82DE /* TaskManagerApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -324,7 +332,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kashiash.TaskManager;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kashiash.TaskManagerCD;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -363,7 +371,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kashiash.TaskManager;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kashiash.TaskManagerCD;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";

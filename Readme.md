@@ -1165,3 +1165,308 @@ NotificationCenter.default.addObserver(forName: .NSPersistentStoreRemoteChange, 
 Pierwsza z tych linii mówi Core Data, że chcemy być powiadamiani, gdy magazyn zostanie zmieniony, a druga mówi systemowi, aby wywoływał naszą nową metodę remoteStoreChanged() za każdym razem, gdy nastąpi zmiana.
 
 Kiedy wszystkie te zmiany zostaną połączone, powinieneś odkryć, że możesz uruchomić dwie kopie aplikacji na dwóch różnych urządzeniach i utrzymać je całkowicie zsynchronizowane – Core Data wykonuje tutaj ogromną ilość pracy za nas!
+
+### Edytowanie elementów
+Naszym następnym krokiem jest stworzenie prostego formularza, aby użytkownik mógł przeglądać i edytować zgłoszenia, co jest w większości proste. Jednak należy dokładnie przemyśleć, jak możemy zgrabnie wybierać tagi – to jest trudniejsze, niż mogłoby się wydawać!
+
+### Szybkie linki
+
+**Przejście przez łatwe części**
+**Główne wydarzenie**
+**Obsługa tagów**
+**Przed zakończeniem…**
+
+### Przejście przez łatwe części
+
+Nasz widok szczegółów będzie składał się z trzech różnych widoków: jednego, gdy użytkownik ma wybrane zgłoszenie, jednego, gdy nie ma wybranego zgłoszenia, oraz trzeciego, który wie, który z pozostałych dwóch widoków wyświetlić.
+
+Mamy już strukturalny placeholder `DetailView`, który stworzyliśmy na początku, więc teraz musimy stworzyć `IssueView` i `NoIssueView`.
+
+Spośród wszystkich trzech widoków, które tworzą przeglądanie zgłoszenia, `IssueView` jest zdecydowanie najtrudniejszy, więc zostawimy go na koniec.
+
+Najpierw skupmy się na `NoIssueView`: zgodnie z aplikacją Apple’s Feedback Assistant, powinno to zawierać tekst „No issue selected”, z przyciskiem poniżej do stworzenia nowego zgłoszenia. Nie mamy jeszcze kodu do tworzenia nowego zgłoszenia, więc dodamy placeholderowy komentarz.
+
+Zastąp swój domyślny kod `NoIssueView` tym:
+
+```swift
+struct NoIssueView: View {
+    @EnvironmentObject var dataController: DataController
+
+    var body: some View {
+        Text("No Issue Selected")
+            .font(.title)
+            .foregroundStyle(.secondary)
+
+        Button("New Issue") {
+            // make a new issue
+        }
+    }
+}
+```
+
+Wskazówka: Nie dodałem widoku kontenera wokół tekstu i przycisku, ponieważ zostanie to dodane później.
+
+Następnie przyjrzyjmy się `DetailView`. Ponownie, musi on wyświetlać albo `IssueView`, albo `NoIssueView` w zależności od tego, czy użytkownik ma coś wybranego w danym momencie.
+
+Obecnie nie śledzimy żadnego wybranego zgłoszenia, więc możemy zacząć od dodania nowej właściwości do `DataController` w tym celu:
+
+```swift
+@Published var selectedIssue: Issue?
+```
+
+To musi przechowywać to, co zostało wybrane w `ContentView`, co oznacza dostosowanie kodu listy do tego:
+
+```swift
+List(selection: $dataController.selectedIssue) {
+```
+
+Właściwość jest opcjonalna, ponieważ aplikacja nie rozpoczyna się z niczym wybranym, ale gdy dotrze do `IssueView`, powinna mieć wartość, którą należy wyświetlić. Więc, zamiast zmuszać `IssueView` do odczytu tej opcjonalnej wartości, możemy dać jej właściwość `Issue`, która nie jest opcjonalna.
+
+Dodaj to do `IssueView`:
+
+```swift
+@ObservedObject var issue: Issue
+```
+
+Upewnij się, że dostosowałeś również kod podglądu:
+
+```swift
+IssueView(issue: .example)
+```
+
+Teraz możemy ukończyć cały `DetailView`: jeśli mamy wybrane zgłoszenie, wysyłamy je do `IssueView`, w przeciwnym razie wyświetlamy `NoIssueView`:
+
+```swift
+struct DetailView: View {
+    @EnvironmentObject var dataController: DataController
+
+    var body: some View {
+        VStack {
+            if let issue = dataController.selectedIssue {
+                IssueView(issue: issue)
+            } else {
+                NoIssueView()
+            }
+        }
+        .navigationTitle("Details")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+```
+
+Wskazówka: Ponieważ jest to widok szczegółów, Apple zaleca używanie stylu paska nawigacji inline.
+
+To już wystarczająco, aby poprawić nasz interfejs użytkownika. Tak, nadal będziesz widzieć „Hello, World!” w trybie portretowym, ale w trybie krajobrazowym powinieneś zobaczyć nasz nowy ekran „No issue selected”.
+
+### Główne wydarzenie
+
+Prawdziwa praca w tym kroku polega na zbudowaniu widoku zgłoszenia, który pozwoli użytkownikom edytować dowolne części zgłoszenia. Wymaga to sporo kodu, aby zapewnić naprawdę dobrą jakość doświadczenia użytkownika, więc podzielimy to na mniejsze części.
+
+Najpierw ten widok będzie formularzem podzielonym na kilka sekcji, aby obsłużyć różne części naszych danych. Możemy zacząć od trzech łatwych kawałków danych: tytuł zgłoszenia, data modyfikacji i priorytet. Więc zastąp swój aktualny kod `IssueView` tym:
+
+```swift
+Form {
+    Section {
+        VStack(alignment: .leading) {
+            TextField("Title", text: $issue.issueTitle, prompt: Text("Enter the issue title here"))
+                .font(.title)
+
+            Text("**Modified:** \(issue.issueModificationDate.formatted(date: .long, time: .shortened))")
+                .foregroundStyle(.secondary)
+        }
+
+        Picker("Priority", selection: $issue.priority) {
+            Text("Low")
+            Text("Medium")
+            Text("High")
+        }
+    }
+}
+```
+
+Wskazówka: Używa to tylko odrobiny Markdown, aby ładnie sformatować tekst.
+
+To niewiele kodu, ale chciałbym, żebyś go wypróbował – częściowo, aby upewnić się, że twój kod kompiluje się bez błędów, ale również dlatego, że tak naprawdę nie będzie działać mimo niewielkiej ilości kodu.
+
+Jeśli wszystko poszło zgodnie z planem, powinieneś móc edytować tytuł zgłoszenia bez problemów, ale zmiana priorytetu nic nie da – zawsze pozostanie „Low”.
+
+Problem polega na tym, że SwiftUI nie rozumie, jak mapować „Low”, „Medium” i „High” na liczby całkowite 0, 1 i 2. Możesz pomyśleć, że naprawienie tego jest proste jak dodanie konkretnych tagów do każdego elementu, jak to:
+
+```swift
+Picker("Priority", selection: $issue.priority) {
+    Text("Low").tag(0)
+    Text("Medium").tag(1)
+    Text("High").tag(2)
+}
+```
+
+Jednak to nadal nie zadziała: użyliśmy `Integer 16` dla atrybutu priorytetu, a SwiftUI widzi wartość `Int` 0 jako inną niż wartość `Int16` 0. Więc, aby ten picker działał poprawnie, potrzebujemy tagu plus rzutowania typu, jak to:
+
+```swift
+Picker("Priority", selection: $issue.priority) {
+    Text("Low").tag(Int16(0))
+    Text("Medium").tag(Int16(1))
+    Text("High").tag(Int16(2))
+}
+```
+
+To niestety jeden z niefortunnych efektów ubocznych Core Data.
+
+Teraz, gdy pierwsza sekcja działa, możemy dodać drugą sekcję, aby zawrzeć miejsce, gdzie użytkownik może edytować treść swojego zgłoszenia. Użyjemy tu rozwijanego `TextField` zamiast `TextEditor`, głównie dlatego, że wygląda dużo lepiej!
+
+Dodaj tę sekcję poniżej poprzedniej:
+
+```swift
+Section {
+    VStack(alignment: .leading) {
+        Text("Basic Information")
+            .font(.title2)
+            .foregroundStyle(.secondary)
+
+        TextField("Description", text: $issue.issueContent, prompt: Text("Enter the issue description here"), axis: .vertical)
+    }
+}
+```
+
+I to nasz podstawowy formularz gotowy! Nie pokazuje wszystkiego, ale przynajmniej zawiera wszystkie ważne części.
+
+### Przed zakończeniem…
+
+Chcemy dodać jeszcze jedną dodatkową informację do tego widoku: bieżący status zakończenia tego zgłoszenia. Mamy `Boolean`, który śledzi, czy zgłoszenie jest zakończone, czy nie, ale chcemy, aby na ekranie wyglądało to trochę ładniej. Dodamy więc małą pomocniczą właściwość w `Issue-CoreDataHelpers.swift`, aby poprawnie sformatować `Boolean`:
+
+```swift
+var issueStatus: String {
+    if completed {
+        return "Closed"
+    } else {
+        return "Open"
+    }
+}
+```
+
+Możemy natychmiast to użyć w `IssueView`, dodając to poniżej tekstu „Modified”:
+
+```swift
+Text("**Status:** \(issue.issueStatus)")
+    .foregroundStyle(.secondary)
+```
+
+### Obsługa tagów
+
+Jest jedna skomplikowana część tego widoku, którą jest obsługa tagów: potrzebujemy sposobu, aby użytkownik mógł wybierać wiele tagów, co jest trudne, ponieważ wbudowany widok `Picker` w SwiftUI obsługuje tylko wybór pojedynczy. To oznacza, że musimy stworzyć coś własnego, najlepiej w sposób, który pozwoli użytkownikom łatwo zobaczyć wszystkie swoje tagi i szybko dodawać lub usuwać tag.
+
+Po pewnych próbach i błędach, rozwiązaniem, które okazało się najlepsze, było użycie widoku `Menu` z elementami dla wszystkich wybranych i niewybranych tagów. Możemy już odczytać wybrane tagi dzięki właściwości `issueTags`, którą stworzyliśmy wcześniej, ale aby uzyskać niewybrane tagi, musimy dodać trochę kodu do `DataController`, który wykona różnicę symetryczną tagów naszego zgłoszenia i wszystkich tagów. To elegancki sposób na powiedzenie „pokaż mi wszystkie zgłoszenia, które nie są już przypisane do tego tagu”, i jest to jedna z operacji zbioru wbudowanych w Swift.
+
+Zamieńmy to na kod. Potrzebujemy metody, która:
+
+- Przyjmie zgłoszenie i zwróci tablicę wszystkich brakujących tagów.
+- Wewnętrznie załaduje wszystkie tagi, które mogą istnieć.
+- Obliczy, które tagi nie są obecnie przypisane do zgłoszenia.
+- Posortuje te tagi, a następnie zwróci je.
+
+Dodaj to do `DataController`:
+
+```swift
+func missingTags(from issue: Issue) -> [Tag] {
+    let request = Tag.fetchRequest()
+    let allTags = (try? container.viewContext.fetch(request)) ?? []
+
+    let allTagsSet = Set(allTags)
+    let difference = allTagsSet.symmetricDifference(issue.issueTags)
+
+    return difference.sorted()
+}
+```
+
+Aby móc to używać z `IssueView`, musimy pobrać nasz wspólny `dataController` z otoczenia, dodając nową właściwość:
+
+```swift
+@EnvironmentObject var dataController: DataController
+```
+
+Możemy teraz umieścić menu poniżej selektora priorytetów i wyświetlić w nim wszystkie wybrane i niewybrane tagi. Aby rzeczy były bardziej czytelne, dodamy znacznik wyboru obok wybranych tagów oraz, jeśli to konieczne, separator sekcji między wybranymi i niewybranymi tagami, aby był wyraźny wizualny podział.
+
+Dodaj to poniżej selektora priorytetów w `IssueView`:
+
+```swift
+Menu {
+    // pokaż wybrane tagi najpierw
+    ForEach(issue.issueTags) { tag in
+        Button {
+            issue.removeFromTags(tag)
+        } label: {
+            Label(tag.tagName, systemImage: "checkmark")
+        }
+    }
+
+    // teraz pokaż niewybrane tagi
+    let otherTags = dataController.missingTags(from: issue)
+
+    if otherTags.isEmpty == false {
+        Divider()
+
+        Section("Add Tags") {
+            ForEach(otherTags) { tag in
+                Button(tag.tagName) {
+                    issue.addToTags(tag)
+                }
+            }
+        }
+    }
+} label: {
+    Text("Tags")
+        .multilineTextAlignment(.leading)
+}
+```
+
+Widok `Menu` w SwiftUI ma wygodny inicjalizator do wyświetlania napisu jako tytułu, ale nie chcę go tutaj używać. Zamiast tego, zamiast pokazywać tylko słowo „Tags”, wyświetlimy listę nazw tagów rozłożoną na tyle linii, ile jest potrzebne.
+
+To kolejny łatwy dodatek do naszych pomocników Core Data dla `Issue`: przekonwertujemy tablicę tagów zgłoszenia na tablicę samych nazw, a następnie użyjemy `formatted()`, aby przekształcić tę tablicę napisów w jeden ciąg znaków.
+
+Dodaj to do rozszerzenia `Issue` w `Issue-CoreDataHelpers.swift`:
+
+```swift
+var issueTagsList: String {
+    guard let tags else { return "No tags" }
+
+    if tags.count == 0 {
+        return "No tags"
+    } else {
+        return issueTags.map(\.tagName).formatted()
+    }
+}
+```
+
+Teraz możemy użyć tego jako tytułu naszego menu, jak poniżej:
+
+```swift
+Text(issue.issueTagsList)
+    .multilineTextAlignment(.leading)
+```
+
+To zadziała od razu, ale zanim to wypróbujesz, wróć do `IssueRow` i zastąp kod `Text("No tags")` kodem `Text(issue.issueTagsList)`.
+
+Teraz spróbuj – powinieneś zauważyć, że dostosowanie tagów automatycznie aktualizuje odpowiedni wiersz w `ContentView`, a jeśli zgłoszenie nie jest oznaczone jako zakończone, powinieneś również zauważyć, że odznaka w `SidebarView` aktualizuje się, aby pokazać dodatkowe zgłoszenie.
+
+### Przed zakończeniem…
+
+Dodamy więcej do widoku później, ale na razie chcę dodać dwie małe poprawki, aby całość była lepsza.
+
+Pierwsza to dodanie małego zabezpieczenia przed zamieszaniem użytkownika: jeśli wybierze zgłoszenie, a następnie otworzy pasek boczny i usunie wybrane zgłoszenie, nie powinniśmy pozwalać mu na dalsze zmiany.
+
+Można to zrobić, dodając pojedynczy modyfikator do całego formularza w `IssueView`:
+
+```swift
+.disabled(issue.isDeleted)
+```
+
+Druga to sposób, w jaki SwiftUI traktuje etykietę menu, dostosowując ją w czasie, ponieważ prawdopodobnie zobaczysz, że będzie się przycinać – SwiftUI często skraca etykietę, kiedy nie jest to potrzebne. Idealnie by się to nie działo, ale w międzyczasie dostosowanie etykiety menu za pomocą tych modyfikatorów rozwiązało problem:
+
+```swift
+Text(issue.issueTagsList)
+    .multilineTextAlignment(.leading)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .animation(nil, value: issue.issueTagsList)
+```
+
+To wszystko na razie dla tego ekranu. Aplikacja nadal wymaga dużo pracy – nie wspominając o tym, że zmiany nie są zapisywane, jeśli edytujesz tytuł lub opis zgłoszenia! – ale przynajmniej możesz zobaczyć, jak wszystko się składa.
