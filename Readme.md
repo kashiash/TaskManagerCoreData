@@ -1833,3 +1833,168 @@ if filterTokens.isEmpty == false {
 Ponownie, wypróbuj to i zobacz, co myślisz – to twoja aplikacja, więc wybierz to, co uważasz za bardziej naturalne.
 
 Dodamy jeszcze bardziej zaawansowane filtrowanie w kolejnym artykule, ale to już wdrożyło naprawdę ważną funkcję, którą docenią twoi użytkownicy.
+
+
+
+## 10 Zaawansowane filtrowanie i sortowanie
+
+
+
+Możesz pomyśleć, że właśnie skończyliśmy filtrowanie, ale Asystent Informacji Zwrotnej Apple idzie o krok dalej, umożliwiając drugą warstwę filtrowania według stanu błędu, a także opcje kontrolowania sortowania – oba te dodatki są warte uwagi i nie są zbyt trudne do dodania w naszym projekcie!
+
+### Budowanie pierwszego szkicu
+Oprócz wyboru czegoś z paska bocznego i korzystania z pola wyszukiwania, Asystent Informacji Zwrotnej Apple posiada dedykowany przycisk filtra, który dodaje dodatkowy poziom kontroli. W tej aplikacji zrobimy coś bardzo podobnego, dając użytkownikowi możliwość:
+
+Pokazania wszystkich problemów, otwartych problemów lub zamkniętych problemów.
+Wybrania jednej konkretnej priorytetowości lub pokazania wszystkich priorytetów.
+Dostosowania rodzaju sortowania (data utworzenia lub data modyfikacji) oraz kolejności sortowania (od najnowszych do najstarszych lub od najstarszych do najnowszych).
+Włączania lub wyłączania filtra problemów i priorytetów, przy czym przycisk zmienia kolor w zależności od tego statusu.
+
+To głównie pochodzi od Asystenta Informacji Zwrotnej Apple, chociaż z jakiegoś powodu dodają oni również możliwość wyboru tagów tutaj, zamiast używania przeszukiwalnych tagów – coś, z czego możemy zrezygnować, ponieważ używamy natywnego rozwiązania SwiftUI.
+
+Przechowywanie nowych kontroli użytkownika wymaga dwóch nowych typów i mnóstwa nowych właściwości, więc zacznijmy.
+
+Po pierwsze, użytkownik musi mieć możliwość wyboru sposobu sortowania danych: czy powinno to być według daty utworzenia, czy według daty modyfikacji. Aby ułatwić dostosowanie do innych atrybutów w naszych danych, zmapujemy te dwa sortowania na nazwy atrybutów w naszym modelu danych – dodaj ten enum do pliku DataController.swift teraz:
+
+```swift
+enum SortType: String {
+    case dateCreated = "creationDate"
+    case dateModified = "modificationDate"
+}
+```
+
+Po drugie, użytkownik będzie mógł filtrować według statusu problemu: otwarty, zamknięty lub dowolny. To kolejny enum, więc dodaj go poniżej poprzedniego:
+
+```swift
+enum Status {
+    case all, open, closed
+}
+```
+
+Po trzecie, musimy śledzić, czy użytkownik chce sortować najnowsze czy najstarsze dane jako pierwsze, jaki priorytet problemu chce pokazać, oraz czy nowy system filtrowania jest włączony czy wyłączony, ale wszystkie trzy z tych rzeczy są prostymi wartościami – liczba całkowita dla priorytetu i wartość logiczna (Boolean) dla pozostałych dwóch.
+
+Więc, mamy już wystarczająco, aby dodać właściwości do DataController, które będą obsługiwać wszystkie filtry dla naszego programu:
+
+```swift
+@Published var filterEnabled = false
+@Published var filterPriority = -1
+@Published var filterStatus = Status.all
+@Published var sortType = SortType.dateCreated
+@Published var sortNewestFirst = true
+```
+
+Wskazówka: Będziemy używać -1 jako specjalnego priorytetu oznaczającego „dowolny priorytet”.
+
+I na koniec możemy zbudować pierwszą wersję interfejsu użytkownika dla wszystkich tych opcji. Jest to w rzeczywistości dość proste w SwiftUI, ponieważ jeśli użyjemy widoku Picker wewnątrz Menu, automatycznie dostosuje się on do serii elementów menu z zaznaczeniem pokazującym, co użytkownik wybrał.
+
+Najważniejszą rzeczą do zrobienia podczas pisania tego kodu jest upewnienie się, że każdemu elementowi przypisano tagi odpowiadające danym, których szukamy. To pozwala nam bezpośrednio powiązać widoki SwiftUI z odpowiadającymi właściwościami DataController, co sprawia, że kod jest ładny i czysty.
+
+Dodaj ten modyfikator do listy w ContentView, po jego modyfikatorze searchable():
+
+```swift
+.toolbar {
+    Menu {
+        Button(dataController.filterEnabled ? "Turn Filter Off" : "Turn Filter On") {
+            dataController.filterEnabled.toggle()
+        }
+
+        Divider()
+
+        Menu("Sort By") {
+            Picker("Sort By", selection: $dataController.sortType) {
+                Text("Date Created").tag(SortType.dateCreated)
+                Text("Date Modified").tag(SortType.dateModified)
+            }
+
+            Divider()
+
+            Picker("Sort Order", selection: $dataController.sortNewestFirst) {
+                Text("Newest to Oldest").tag(true)
+                Text("Oldest to Newest").tag(false)
+            }
+        }
+
+        Picker("Status", selection: $dataController.filterStatus) {
+            Text("All").tag(Status.all)
+            Text("Open").tag(Status.open)
+            Text("Closed").tag(Status.closed)
+        }
+
+        Picker("Priority", selection: $dataController.filterPriority) {
+            Text("All").tag(-1)
+            Text("Low").tag(0)
+            Text("Medium").tag(1)
+            Text("High").tag(2)
+        }
+    } label: {
+        Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
+    }
+}
+```
+
+Nie jest to idealne i na pewno nie wpływa jeszcze na nasze wyniki wyszukiwania, ale przynajmniej powinno działać dobrze: można dostosować status i priorytet problemu, oraz wywołać podmenu Sort By, aby dostosować te opcje.
+
+Dostosowywanie filtra
+Można sobie wyobrazić, że uwzględnienie wszystkich tych opcji w sortowaniu zamówień będzie dużo pracy, ale myślę, że będziesz zaskoczony, ponieważ dobrze wpisuje się to w system tablicy predykatów, który opracowaliśmy wcześniej.
+
+Jedynym rzeczywistym haczykiem jest to, że tworzenie NSPredicate dla wartości logicznej jest trochę dziwne, ponieważ oczekuje instancji klasy kompatybilnej z Objective-C. Więc musimy owinąć nasz prosty Boolean wewnątrz instancji NSNumber – to nie jest zbyt ładne, zgadzam się, ale jesteśmy raczej z tym uwiązani.
+
+W każdym razie, zarówno nasz filtr priorytetu, jak i statusu powinny być aktywowane tylko, jeśli większy Boolean filterEnabled jest ustawiony na true, więc dodaj te dodatkowe predykaty do metody issuesForSelectedFilter() w DataController, tuż przed linią let request = Issue.fetchRequest():
+
+```swift
+if filterEnabled {
+    if filterPriority >= 0 {
+        let priorityFilter = NSPredicate(format: "priority = %d", filterPriority)
+        predicates.append(priorityFilter)
+    }
+
+    if filterStatus != .all {
+        let lookForClosed = filterStatus == .closed
+        let statusFilter = NSPredicate(format: "completed = %@", NSNumber(value: lookForClosed))
+        predicates.append(statusFilter)
+    }
+}
+```
+
+Są dwa małe punkty, które chciałbym tu podkreślić:
+
+Predykat priorytetu jest dodawany tylko, jeśli priorytet jest większy lub równy 0, ponieważ, jak pamiętasz, używamy priorytetu -1, aby oznaczać „wszystkie priorytety”.
+Stała lookForClosed będzie ustawiona na true, jeśli użytkownik szuka tylko zamkniętych problemów, ale ten predykat jest dodawany tylko, jeśli nie poprosili o wszystkie problemy.
+Po zakończeniu tego, teraz musimy honorować pozostałe dwie nowe właściwości: który atrybut sortować oraz czy jest to rosnące czy malejące. To w rzeczywistości tylko jedna linia kodu, ponieważ możemy przekonwertować wartość sortType na nazwę atrybutu przy użyciu jego właściwości rawValue i użyć sortNewestFirst bezpośrednio, aby zdecydować, czy chcemy kolejność rosnącą, czy nie.
+
+Więc dodaj to po linii request.predicate = :
+
+```swift
+request.sortDescriptors = [NSSortDescriptor(key: sortType.rawValue, ascending: sortNewestFirst)]
+```
+
+Gotowe! Teraz mamy zaawansowane filtrowanie i sortowanie działające – jest to trochę brzydkie z powodu sposobu, w jaki musimy traktować typy Core Data, ale mogło być znacznie gorzej!
+
+Dopracowanie interfejsu użytkownika
+W tym momencie mamy coś, co działa wystarczająco dobrze, ale jest miejsce na ulepszenia, aby dać użytkownikowi jaśniejsze informacje zwrotne na temat systemu filtrowania.
+
+Po pierwsze, prosta zmiana: jeśli filtr jest wyłączony, zarówno pickery Status, jak i Priority powinny być wyłączone, ponieważ nie będą miały żadnego efektu. To jest tak proste, jak dodanie następujących modyfikatorów do tych pickerów:
+
+```swift
+.disabled(dataController.filterEnabled == false)
+```
+
+Wskazówka: Opcje sortowania nie powinny być wyłączone, ponieważ będą miały efekt niezależnie od tego.
+
+Ta mała zmiana powinna miejmy nadzieję uniknąć pewnego zamieszania użytkowników – nie mogą dostosowywać tych opcji, gdy sam filtr jest wyłączony.
+
+Drugą zmianą, którą wprowadzimy, jest zapewnienie wizualnej informacji zwrotnej na samym przycisku paska narzędzi, pokazując użytkownikowi na pierwszy rzut oka, czy filtr jest aktualnie włączony, czy nie. To zajmie trochę więcej pracy, gdy wrócimy do rozważania wsparcia dla macOS, ale na iOS to tylko kwestia przełączenia wariantu symbolu przycisku między wypełnionym a domyślnym, tak jak to:
+
+```swift
+Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
+    .symbolVariant(dataController.filterEnabled ? .fill : .none)
+```
+
+Wrócimy, aby dostosować całe to menu później, ponieważ potrzebuje ono trochę więcej przemyślenia na macOS. Jednak na razie skonczyliśmy to zagadnienie i nasze filtrowanie działa naprawdę dobrze!
+
+
+
+
+
+
+
