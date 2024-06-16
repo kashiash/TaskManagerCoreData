@@ -10,6 +10,8 @@ import SwiftUI
 struct IssueView: View {
     @EnvironmentObject var dataController: DataController
     @ObservedObject var issue: Issue
+    @Environment(\.scenePhase) var scenePhase
+
     var body: some View {
         Form {
             Section {
@@ -59,6 +61,14 @@ struct IssueView: View {
             }
         }
         .disabled(issue.isDeleted)
+        .onReceive(issue.objectWillChange) { _ in
+            dataController.queueSave()
+        }
+        .onChange(of: scenePhase) { phase in
+            if phase != .active {
+                dataController.save()
+            }
+        }
     }
 }
 

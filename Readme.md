@@ -6,7 +6,7 @@ https://www.hackingwithswift.com/plus/ultimate-portfolio-app/ultimate-portfolio-
 
 
 
-## Aplikacja Ultimate Portfolio: Wprowadzenie
+## 1. Aplikacja Ultimate Portfolio: Wprowadzenie
 
 Chociaż jestem pewien, że chcesz natychmiast rozpocząć programowanie, daj mi kilka minut na przedstawienie celów tego kursu i wyjaśnienie, dlaczego różni się on od innych kursów, które napisałem.
 
@@ -1166,7 +1166,8 @@ Pierwsza z tych linii mówi Core Data, że chcemy być powiadamiani, gdy magazyn
 
 Kiedy wszystkie te zmiany zostaną połączone, powinieneś odkryć, że możesz uruchomić dwie kopie aplikacji na dwóch różnych urządzeniach i utrzymać je całkowicie zsynchronizowane – Core Data wykonuje tutaj ogromną ilość pracy za nas!
 
-### Edytowanie elementów
+### 7 Edytowanie elementów
+
 Naszym następnym krokiem jest stworzenie prostego formularza, aby użytkownik mógł przeglądać i edytować zgłoszenia, co jest w większości proste. Jednak należy dokładnie przemyśleć, jak możemy zgrabnie wybierać tagi – to jest trudniejsze, niż mogłoby się wydawać!
 
 ### Szybkie linki
@@ -1470,3 +1471,365 @@ Text(issue.issueTagsList)
 ```
 
 To wszystko na razie dla tego ekranu. Aplikacja nadal wymaga dużo pracy – nie wspominając o tym, że zmiany nie są zapisywane, jeśli edytujesz tytuł lub opis zgłoszenia! – ale przynajmniej możesz zobaczyć, jak wszystko się składa.
+
+## 8 Natychmiastowa synchronizacja i zapis
+
+Obecnie wyzwalamy zapis, gdy nasz użytkownik podejmuje dramatyczne działania, takie jak dodawanie tagu lub usuwanie problemu, ale nie chcemy wyzwalać zapisu przy każdym naciśnięciu klawisza podczas edytowania tytułu problemu. Jak więc możemy zapewnić bezpieczeństwo danych, jednocześnie unikając nadmiernej ilości pracy?
+
+Problem z prostymi rozwiązaniami
+Czasami najprostsze rozwiązanie jest właściwe, a w tym przypadku najprostszym rozwiązaniem jest wywoływanie metody save() na naszym kontrolerze danych za każdym razem, gdy użytkownik wprowadza jakąkolwiek zmianę. W przypadku małych ilości danych może to być w porządku, ale tutaj nie jest to najlepszy pomysł – każde zadanie może zawierać różne długie teksty, więc zapisywanie tego na dysku raz po raz podczas pisania przez użytkownika będzie zużywać czas CPU.
+
+Przechodząc na wyższy poziom trudności, moglibyśmy dołączyć trochę kodu do modyfikatora SwiftUI's onDisappear(), aby wykryć, kiedy użytkownik opuszcza bieżący widok zadania i zapisywać zmiany dopiero w tym momencie. Opóźnia to pracę do momentu, aż użytkownik na pewno skończy, ale to nie wystarcza: nie uwzględnia sytuacji, w której użytkownik nigdy nie opuści ekranu (tj. jeśli po prostu zamknie aplikację zamiast najpierw opuścić ekran), wtedy dane nigdy nie zostaną zapisane. Istnieje również możliwość, że – o zgrozo! – nasz program może mieć błąd, a w najgorszym przypadku użytkownik może „nieoczekiwanie wrócić do ekranu głównego” po spędzeniu czasu na dodawaniu wartościowych informacji do zadania.
+
+Dlatego dobre podejście tutaj musi znaleźć złoty środek: zbyt częste zapisywanie jest nieefektywne, ale zbyt rzadkie zapisywanie ryzykuje utratę danych użytkownika. To podejście będzie wymagać trzech kroków:
+
+1. Tworzenie nowego zadania w DataController, które czeka trzy sekundy przed wywołaniem save(). Jeśli użytkownik wprowadzi jakiekolwiek zmiany w tym czasie, anulujemy poprzednie zadanie i tworzymy nowe.
+2. Wywoływanie tego z IssueView za każdym razem, gdy jakakolwiek część zadania ulegnie zmianie. Oznacza to, że podczas pisania użytkownika tworzymy i anulujemy nowe zadanie regularnie, ale jest to znacznie tańsze niż aktualizacja przechowywania danych Core Data na dysku.
+3. Gdy aplikacja przestaje być aktywna w tle, natychmiast wyzwalamy zapis na wszelki wypadek, gdyby użytkownik zamierzał ją zamknąć.
+
+To powinno zabezpieczyć nasze dane bez konieczności synchronizacji Core Data przy każdym naciśnięciu klawisza w każdym polu tekstowym.
+
+**Kolejkowanie zapisu**
+Rozwiązanie tego problemu wymaga zaskakująco mało kodu, zaczynając od kilku zmian w naszej klasie DataController.
+
+Najpierw musimy stworzyć nową właściwość do przechowywania instancji Task, która obsłuży nasze zapisywanie. To zadanie nie zwróci wartości, ponieważ tylko wywołuje metodę save(), ale może rzucić wyjątek, ponieważ przed wywołaniem save() poprosimy zadanie o uśpienie na chwilę. Dlatego musimy zadeklarować to jako Task<Void, Error>, aby spełniało nasze potrzeby, i uczynimy je opcjonalnym, ponieważ na początku nie będzie istnieć.
+
+Dodaj tę właściwość do DataController teraz:
+
+```swift
+private var saveTask: Task<Void, Error>?
+```
+
+Następnie musimy dodać metodę, która zapisze nasze zmiany po opóźnieniu. Można to zrobić przez utworzenie nowego zadania, uśpienie go na kilka sekund, a następnie wywołanie save() – dodaj to do DataController teraz:
+
+```swift
+func queueSave() {
+    saveTask?.cancel()
+
+    saveTask = Task {
+        try await Task.sleep(for: .seconds(3))
+        save()
+    }
+}
+```
+
+Jest tam kilka interesujących części:
+
+- Przechowujemy nowe zadanie w właściwości saveTask, którą stworzyliśmy.
+- Dzięki temu możemy anulować zadanie najpierw, jeśli pojawi się kolejna zmiana, upewniając się, że istniejące zadanie w kolejce nie zostanie wykonane.
+- Wewnątrz zadania znajduje się nasze uśpienie. Jak długo uśpić zależy od Ciebie, ale trzy sekundy to dobry punkt wyjścia.
+- Uśpienie zadania jest operacją rzucającą wyjątek, ponieważ anulowanie zadania powoduje natychmiastowe zakończenie uśpienia i rzucenie wyjątku. To jest przydatne tutaj, ponieważ oznacza, że nasza metoda save() nie zostanie wykonana.
+
+To może działać dobrze, ale chcę wprowadzić jedną ważną zmianę:
+
+```swift
+saveTask = Task { @MainActor in
+```
+
+To mówi zadaniu, że musi uruchomić swoje ciało na głównym aktorze, co ma znaczenie. Chociaż Core Data jest zaprojektowane do pracy w środowisku wielowątkowym, musisz to naprawdę ostrożnie obsługiwać – przekazywanie jednego zarządzanego obiektu między wątkami to naprawdę zły pomysł, co jest dokładnie tym, co Task ułatwia przez przypadek.
+
+Dlatego, dopóki nie mam powodu, aby postępować inaczej – tj. jeśli muszę zaimplementować jakieś zadanie działające wolno, takie jak masowe tworzenie danych – wolę trzymać całą pracę z Core Data na głównym aktorze. Wszystko, co zrobiliśmy gdzie indziej, już tam jest, ponieważ jest wyzwalane przez SwiftUI, ale to zadanie musi być jawne.
+
+Nie uczyniłem queueSave() prywatnym, więc każda część naszego programu może go wywołać, jeśli to konieczne. Na razie oznacza to, że IssueView będzie go wywoływać za każdym razem, gdy jakakolwiek część jego zadania ulegnie zmianie – użytkownik będzie mógł swobodnie pisać, a faktyczny zapis nastąpi dopiero po kilku sekundach przerwy.
+
+Możesz pomyśleć, że możemy obserwować zmiany za pomocą onChange(), z kodem takim jak ten:
+
+```swift
+.onChange(of: issue) { _ in
+    dataController.queueSave()
+}
+```
+
+Jednak to nie zadziała – tak, wartości wewnątrz zadania mogą się zmieniać, ale rzeczywisty obiekt zadania pozostaje taki sam, więc onChange() nic nie zrobi.
+
+Zamiast tego musimy użyć onReceive(), aby obserwować, kiedy zadanie ogłasza zmiany za pomocą @Published. Jeśli pamiętasz, @Published wewnętrznie wywołuje publisher objectWillChange, który jest wbudowany w każdą klasę zgodną z ObservableObject. Możemy więc użyć onReceive(), aby to obserwować, i wywoływać queueSave() za każdym razem, gdy pojawi się powiadomienie o zmianie.
+
+Dodaj to poniżej .disabled(issue.isDeleted) w IssueView:
+
+```swift
+.onReceive(issue.objectWillChange) { _ in
+    dataController.queueSave()
+}
+```
+
+I teraz duża część naszego problemu jest rozwiązana: każda mała zmiana wprowadzona przez użytkownika będzie kolejkować operację zapisu, zapewniając bezpieczeństwo danych bez zużywania zbyt dużej ilości czasu CPU.
+
+Ale jest jeszcze jedna rzecz do naprawienia...
+
+**Obsługa wyjścia**
+Aby nasze zapisywanie było naprawdę niezawodne, musimy uwzględnić jeszcze jedną sytuację: jeśli użytkownik wprowadzi zmianę w zadaniu, a następnie szybko przejdzie do multitaskingu i wyjdzie z aplikacji, musimy upewnić się, że jego dane są na pewno bezpieczne, zamiast czekać kilka sekund na zakończenie uśpienia.
+
+Można to zrobić, obserwując zmianę fazy sceny w naszej głównej strukturze App, najpierw dodając nową właściwość:
+
+```swift
+@Environment(\.scenePhase) var scenePhase
+```
+
+A następnie wyzwalając zapis dla każdej zmiany fazy, która nie jest powrotem aplikacji do aktywnego stanu, co oznacza dodanie tego poniżej property wrappera environmentObject():
+
+```swift
+.onChange(of: scenePhase) { phase in
+    if phase != .active {
+        dataController.save()
+    }
+}
+```
+
+Wiem, że to wygląda na uwzględnianie raczej mało prawdopodobnego scenariusza, ale jak powiedział Doug Linder: „dobry programista to taki, który patrzy w obie strony przed przejściem przez jednokierunkową ulicę.”
+
+
+
+
+
+## 9 Filtrowanie problemów (Issues) w aplikacji
+
+Na tym etapie mamy bardzo podstawową wersję naszej aplikacji, ale brakuje nam kilku kluczowych funkcji, w tym wyszukiwania. Możemy uzyskać prostą wersję wyszukiwania z niewielką ilością pracy, ale świetna wersja oznacza znacznie bardziej zaawansowane wykorzystanie Core Data.
+
+### Oddzielenie logiki od widoków
+
+Jednym z najprostszych i najinteligentniejszych sposobów na poprawę kodu SwiftUI jest oddzielenie logiki od kodu widoku. Będziemy dużo o tym mówić później, kiedy omówimy wzorzec MVVM, ale na razie skupimy się na dodaniu funkcji wyszukiwania do naszej aplikacji. W związku z tym chcę przenieść pewien fragment kodu: właściwość `issues` w `ContentView`.
+
+Ta właściwość ma za zadanie obliczać, które problemy mają być wyświetlane. Robi to, zwracając wszystkie problemy dla wybranego tagu, jeśli taki istnieje, w przeciwnym razie wykonuje zapytanie do Core Data, aby dopasować je do daty modyfikacji. To dobre rozwiązanie dla prostej aplikacji, ale co jeśli użytkownik chciałby wyszukać konkretny problem po tytule lub treści? Co jeśli chcielibyśmy umożliwić wyszukiwanie po jednym lub kilku tagach jednocześnie za pomocą tokenów wyszukiwania?
+
+Tutaj kod staje się bardziej skomplikowany, a próba wciśnięcia tego wszystkiego do `ContentView` powoduje, że akceptowalne rozwiązanie staje się raczej kiepskie. Dlatego zanim napiszemy więcej kodu, zaczniemy od przeniesienia właściwości `issues` z `ContentView` do `DataController` - bezpiecznego miejsca dla wszelkiej logiki związanej z Core Data, chyba że potrzebujemy czegoś specyficznego.
+
+Otwórz `ContentView`, a następnie wytnij całą właściwość `issues` do schowka. Teraz wklej ją do `DataController` i zmień z właściwości na metodę, tak jak poniżej:
+
+```swift
+func issuesForSelectedFilter() -> [Issue] {
+```
+
+Musimy wprowadzić dwie małe zmiany w kodzie, aby skompilował się poprawnie, obie polegające na usunięciu `dataController.` ponieważ nie jest już potrzebne.
+
+W `ContentView` musimy wywołać tę metodę z naszego ciała widoku, tak jak poniżej:
+
+```swift
+List(selection: $dataController.selectedIssue) {
+    ForEach(dataController.issuesForSelectedFilter()) { issue in
+        IssueRow(issue: issue)
+    }
+    .onDelete(perform: delete)
+}
+.navigationTitle("Issues")
+```
+
+Musimy także uzyskać dostęp do tej samej tablicy wewnątrz metody `delete()`. Najlepiej zrobić to, wywołując naszą nową metodę `issuesForSelectedFilter()` na początku metody `delete()`, a następnie usuwając elementy z tej tablicy, jak poniżej:
+
+```swift
+func delete(_ offsets: IndexSet) {
+    let issues = dataController.issuesForSelectedFilter()
+
+    for offset in offsets {
+        let item = issues[offset]
+        dataController.delete(item)
+    }
+}
+```
+
+To mała zmiana, ale bardzo rozsądna - zaraz dodamy dużo więcej logiki do ładowania problemów, a umieszczenie jej w jednym miejscu pozwala `ContentView` skupić się głównie na układzie, co również ułatwi pisanie testów później.
+
+### Proste predykaty vs. złożone predykaty
+
+Obecnie filtrujemy problemy na dwa sposoby: jeśli mamy przypisany tag, zwracamy wszystkie jego problemy, w przeciwnym razie wykonujemy zapytanie fetch i dodajemy NSPredicate, który sprawdza tylko najnowsze problemy.
+
+To było miłe małe rozwiązanie dla problemu, który mieliśmy, ale teraz jest to bardziej skomplikowane, ponieważ musimy zachować ten sam filtr oraz dodać możliwość filtrowania tekstu. Dodamy również możliwość filtrowania za pomocą tokenów, aby użytkownik widział listę sugerowanych tagów do wyboru, zamiast wpisywać wszystko ręcznie.
+
+Rozwiązanie tego problemu zajmie kilka kroków, zaczynając od możliwości wyszukiwania za pomocą tekstu, jednocześnie utrzymując obecny filtr. To wymaga trzech kroków:
+
+1. Utworzenie właściwości `DataController` do przechowywania tego, co użytkownik aktualnie wpisał.
+2. Powiązanie tego z modyfikatorem `searchable()` SwiftUI w `ContentView`.
+3. Użycie tego do filtrowania naszych problemów.
+
+Żaden z tych kroków nie jest trudny, więc zaczynamy.
+
+Najpierw dodaj nową właściwość do `DataController`:
+
+```swift
+@Published var filterText = ""
+```
+
+To pusty ciąg znaków domyślnie, ale zostanie wypełniony kryteriami wyszukiwania użytkownika.
+
+Po drugie, musimy powiązać to z naszym interfejsem użytkownika SwiftUI, co oznacza dodanie tego modyfikatora do listy w `ContentView`, przed lub po tytule nawigacji:
+
+```swift
+.searchable(text: $dataController.filterText, prompt: "Filter issues")
+```
+
+To nie jest dokładnie tak, jak robi to Asystent Feedback Apple, ale jest bardzo podobne. Różnica polega na tym, że oni dają swojemu polu wyszukiwania podpowiedź „Search”, ale ja powiedziałbym, że to naprawdę jest filtr, a nie wyszukiwanie – jeśli wpiszesz tam tekst, nie przeszukuje wszystkich problemów, ale zamiast tego filtruje problemy, które już przeglądałeś.
+
+Po trzecie, musimy zaktualizować metodę `issuesForSelectedFilter()`, aby uwzględniała tekst filtra.
+
+Lenistwem byłoby zostawienie naszego obecnego kodu nienaruszonego i po prostu filtrowanie tablicy `allIssues` według potrzeb. Oznacza to, że zachowujemy nasze obecne zachowanie, a następnie dopasowujemy się do tytułu i treści problemu później.
+
+Aby wypróbować to podejście, dodaj poniższy nowy kod przed `return allIssues.sorted()`:
+
+```swift
+let trimmedFilterText = filterText.trimmingCharacters(in: .whitespaces)
+
+if trimmedFilterText.isEmpty == false {
+    allIssues = allIssues.filter { $0.issueTitle.localizedCaseInsensitiveContains(filterText) || $0.issueContent.localizedCaseInsensitiveContains(filterText) }
+}
+```
+
+To działa i jeśli nie próbowałbym budować kodu, z którego możesz być dumny, prawdopodobnie bym się na to zgodził.
+
+Jednak możemy zrobić to lepiej i zrobimy to lepiej. Problem z tym podejściem polega na tym, że zmusza Core Data do załadowania wszystkich problemów, a następnie wyrzuca wiele, jeśli nie wszystkie, z nich w drugim przebiegu. Oznacza to, że zarówno Core Data, jak i Swift wykonują dużo więcej pracy niż to konieczne. Co gorsza, gdy dodamy filtr tokenowy, będziemy mieć kolejną rundę filtrowania – robi się to szybko bałagan, nie wspominając o nieefektywności.
+
+Znacznie mądrzejszym podejściem jest poproszenie Core Data, aby zrobiło za nas całą ciężką pracę: zastosowanie wielu predykatów do naszego zapytania, aby nasza zapytanie fetch zwracało tylko to, co rzeczywiście będzie wyświetlone na ekranie.
+
+Teraz, tutaj początkujący mogą się pogubić: zapytanie fetch Core Data ma właściwość `predicate`, która akceptuje jeden `NSPredicate`, którego już używamy do filtrowania według daty modyfikacji naszych problemów. Jak więc możemy zastosować wiele filtrów?
+
+Rozwiązanie polega na tym, że `NSPredicate` jest klasą, a istnieje podklasa o nazwie `NSCompoundPredicate`, która ma bardziej zaawansowaną funkcjonalność. Ponieważ jest to podklasa, `NSCompoundPredicate` może wyglądać i działać jak `NSPredicate` wszędzie tam, gdzie tego potrzebujemy, co oznacza, że możemy tworzyć złożone zestawy filtrów na podstawie precyzyjnych danych wejściowych użytkownika i sprawić, aby Core Data zastosowała je wszystkie jako część zapytania fetch.
+
+Złożone predykaty występują w trzech formach:
+
+1. Predykat „and” może otrzymać tablicę obiektów `NSPredicate` i wszystkie muszą być prawdziwe, aby obiekt został zwrócony.
+2. Predykat „or” również przyjmuje tablicę obiektów `NSPredicate`, ale obiekt zostanie zwrócony, jeśli którykolwiek z predykatów będzie prawdziwy.
+3. Predykat „not” jest odwrotnością zwykłego predykatu; nie będziemy go tutaj używać.
+
+Podejście to polega na stworzeniu pustej tablicy `NSPredicate`, stopniowym dodawaniu wszystkich predykatów, które musimy dopasować do wyszukiwania użytkownika, a następnie dołączeniu tego do naszego zapytania fetch.
+
+Najpierw musimy przenieść nasz oryginalny kod, aby używał tego podejścia, abyśmy mieli coś, do czego możemy dołączyć predykaty. Oznacza to dodanie predykatu, że atrybut `tags` dla problemu zawiera usunięty tag użytkownika lub użycie naszego oryginalnego predykatu, który filtrował według daty modyfikacji. W każdym przypadku muszą one trafić do tablicy, którą dołączamy jako `NSCompoundPredicate`.
+
+Zastąp swoją istniejącą metodę `issuesForSelectedFilter()` tym kodem:
+
+```swift
+func issuesForSelectedFilter() -> [Issue] {
+    let filter = selectedFilter ?? .all
+    var predicates = [NSPredicate]()
+
+    if let tag = filter.tag {
+        let tagPredicate = NSPredicate(format: "tags CONTAINS %@", tag)
+        predicates.append(tagPredicate)
+    } else {
+        let datePredicate = NSPredicate(format: "modificationDate > %@", filter.minModificationDate as NSDate)
+        predicates.append(datePredicate)
+    }
+
+    let request = Issue.fetchRequest()
+    request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+
+    let allIssues = (try? container.viewContext.fetch(request)) ?? []
+    return allIssues.sorted()
+}
+```
+
+W tym kodzie znajdują się dwa kluczowe nowe elementy:
+
+1. Predykat `tags CONTAINS %@` oznacza „relacja `tags` dla danego problemu musi zawierać konkretny tag” – w naszym przypadku to wybrany tag.
+2. Gdy tworzymy końcowy predykat, używamy `NSCompoundPredicate`, a konkretnie jego inicjalizatora `andPredicateWithSubpredicates`. Ten inicjalizator przyjmuje tablicę naszych predykatów i zapewnia, że wszystkie muszą być spełnione dla każdego problemu w zapytaniu fetch.
+
+To przywraca nam stare zachowanie, ale musimy zaktualizować to, aby wspierało wyszukiwanie tytułu i treści jednocześnie. Teraz, gdy mamy naszą tablicę predykatów, możemy po prostu dodać więcej do niej, ale tutaj potrzebujemy czegoś bardzo precyzyjnego: chcemy, aby tytuł lub treść były zgodne. To predykat „or”, ale umieszczamy go wewnątrz większego predykatu „and”, który już mamy.
+
+Aby to zrobić, dodaj ten kod przed linią `let request = Issue.fetchRequest()`:
+
+```swift
+let trimmedFilterText = filterText.trimmingCharacters(in: .whitespaces)
+
+if trimmedFilterText.isEmpty == false {
+    let titlePredicate = NSPredicate(format: "title CONTAINS[c] %@", trimmedFilterText)
+    let contentPredicate = NSPredicate(format: "content CONTAINS[c] %@", trimmedFilterText)
+    let combinedPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [titlePredicate, contentPredicate])
+    predicates.append(combinedPredicate)
+}
+```
+
+Wyjaśnijmy to:
+
+- Oba te predykaty używają formatu `CONTAINS[c]`, który wykonuje porównanie bez uwzględniania wielkości liter.
+- Nie potrzebujemy, aby oba były prawdziwe, więc owijamy dwa mniejsze predykaty w `NSCompoundPredicate` używając inicjalizatora `orPredicateWithSubpredicates`.
+- Ten złożony predykat trafia do naszej większej tablicy predykatów, co pokazuje ważną cechę tych złożonych predykatów: mogą one zawierać dalsze złożone predykaty wewnątrz siebie, aby uzyskać dokładnie taki wynik, jaki chcemy.
+
+Dzięki temu mamy teraz znacznie lepsze filtrowanie – bardziej wydajne, ponieważ sprawiamy, że Core Data wykonuje znacznie mniej pracy, ale również bardziej elastyczne, ponieważ możemy dodawać coraz więcej predykatów z biegiem czasu, po prostu dodając je do tablicy.
+
+Ale możemy zrobić jeszcze lepiej…
+
+### Dodanie tokenów
+
+Teraz, gdy mamy działające wyszukiwanie tekstowe, chcę zaktualizować naszą implementację `searchable()`, aby obsługiwała tokeny. Są one często używane do oferowania autouzupełniania w aplikacjach: podczas pisania pojawia się lista możliwych dopasowań, co pozwala nam dodać konkretne dopasowania do większego wyszukiwania.
+
+W systemie macOS ta lista pojawia się jako wyskakujące okienko poniżej pola wyszukiwania, ale w systemie iOS zastępuje całe wyniki wyszukiwania. Pierwsze jest w porządku, ale drugie powoduje problem, ponieważ uniemożliwia regularne wyszukiwania. Dlatego, zamiast zawsze zwracać możliwe tokeny do wyboru, poprosimy użytkownika o wpisanie najpierw „#”.
+
+Implementacja tokenów wyszukiwania wymaga kilku kroków:
+
+1. Zwrócenie listy wszystkich możliwych tokenów. Możesz je filtrować, jeśli chcesz, ale nie jest to konieczne.
+2. Utworzenie miejsca do przechowywania aktualnie wybranych przez użytkownika tokenów.
+3. Powiązanie obu tych elementów z modyfikatorem `searchable()`, w tym poinformowanie SwiftUI, jak wyświetlać tokeny.
+4. Dostosowanie metody `issuesForSelectedFilter()`, aby uwzględniała te tokeny.
+
+Zaimplementujmy to teraz, zaczynając od uzyskania wszystkich możliwych tokenów. Jak powiedziałem, możesz je filtrować, ale nie jest to wymagane – to świetna funkcja na wypadek, gdyby użytkownik miał do wyboru dziesiątki tagów i nie jest to trudne do wdrożenia, więc polecam to wypróbować.
+
+SwiftUI oczekuje sugerowanych tokenów jako tablicy obiektów, więc to tak proste, jak załadowanie wszystkich naszych tagów za pomocą zapytania fetch z opcjonalnym predykatem. Ponownie, chcemy, aby ta lista wracała tylko wtedy, gdy tekst wyszukiwania zaczyna się od symbolu „#”, aby nie blokować regularnej operacji filtra.
+
+Dodaj to teraz do `DataController`:
+
+```swift
+var suggestedFilterTokens: [Tag] {
+    guard filterText.starts(with: "#") else {
+        return []
+    }
+
+    let trimmedFilterText = String(filterText.dropFirst()).trimmingCharacters(in: .whitespaces)
+    let request = Tag.fetchRequest()
+
+    if trimmedFilterText.isEmpty == false {
+        request.predicate = NSPredicate(format: "name CONTAINS[c] %@", trimmedFilterText)
+    }
+
+    return (try? container.viewContext.fetch(request).sorted()) ?? []
+}
+```
+
+Po drugie, potrzebujemy miejsca do przechowywania aktualnej listy tokenów wybranych przez użytkownika. Będzie to początkowo pusta tablica `Tag`, ale automatycznie dostosowuje się, gdy użytkownik dodaje lub usuwa tagi. Dodaj tę nową właściwość do `DataController` teraz:
+
+```swift
+@Published var filterTokens = [Tag]()
+```
+
+Po trzecie, musimy powiązać sugerowane i rzeczywiste tokeny z `searchable()`, co oznacza dodanie trzech nowych parametrów i dostosowanie istniejącego:
+
+- Parametr `tokens` powinien być powiązany z naszą właściwością `filterTokens`, aby przechowywać bieżące tokeny użytkownika.
+- Parametr `suggestedTokens` powinien być powiązany z `suggestedFilterTokens`, z małym zastrzeżeniem: to musi być powiązanie, więc opakujemy je w stałe powiązanie tutaj.
+- Potrzebujemy trailing closure, aby powiedzieć SwiftUI, jak przekształcić jedną instancję `Tag` w widoczny interfejs użytkownika. Użyjemy prostego widoku `Text` zawierającego jego nazwę, ale możesz spróbować czegoś bardziej zaawansowanego.
+- I jeden, który musimy dostosować: tekst podpowiedzi powinien informować użytkowników, aby zaczynali od „#”, aby wywołać tagi.
+
+Zastąp swój istniejący modyfikator `searchable()` w `ContentView` tym:
+
+```swift
+.searchable(text: $dataController.filterText, tokens: $dataController.filterTokens, suggestedTokens: .constant(dataController.suggestedFilterTokens), prompt: "Filter issues, or type # to add tags") { tag in
+    Text(tag.tagName)
+}
+```
+
+To kończy część interfejsu użytkownika naszego kodu, ale wciąż musimy dostosować metodę `issuesForSelectedFilter()`, aby uwzględniała tokeny. Dzięki podejściu z tablicą predykatów, możemy to zrobić w prosty sposób – jest to tak proste, że pokażę ci dwa podejścia, a ty wybierzesz, które ci odpowiada.
+
+
+
+Łatwiejsze z dwóch podejść polega na użyciu tagów jako filtra „or” – poproszenie Core Data, aby zwróciło problemy, które pasują do dowolnego z tagów, zamiast wymagać, aby jeden problem zawierał wszystkie.
+
+Aby to zrobić, dodaj ten nowy kod do `issuesForSelectedFilter()` bezpośrednio przed linią `let request = Issue.fetchRequest()`:
+
+```swift
+if filterTokens.isEmpty == false {
+    let tokenPredicate = NSPredicate(format: "ANY tags IN %@", filterTokens)
+    predicates.append(tokenPredicate)
+}
+```
+
+Wypróbuj to i zobacz, co myślisz – może się okazać, że to podejście działa świetnie dla sposobu, w jaki chcesz, aby aplikacja działała.
+
+Alternatywnie, możemy poprosić Core Data, aby upewniła się, że zwrócone problemy zawierają wszystkie wybrane przez użytkownika tagi. Niestety nie możemy po prostu zmienić `ANY` na `ALL` w naszym predykacie, ale ponownie nasze podejście z tablicą predykatów przychodzi z pomocą, ponieważ możemy użyć pętli jak poniżej:
+
+```swift
+if filterTokens.isEmpty == false {
+    for filterToken in filterTokens {
+        let tokenPredicate = NSPredicate(format: "tags CONTAINS %@", filterToken)
+        predicates.append(tokenPredicate)
+    }
+}
+```
+
+Ponownie, wypróbuj to i zobacz, co myślisz – to twoja aplikacja, więc wybierz to, co uważasz za bardziej naturalne.
+
+Dodamy jeszcze bardziej zaawansowane filtrowanie w kolejnym artykule, ale to już wdrożyło naprawdę ważną funkcję, którą docenią twoi użytkownicy.
