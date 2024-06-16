@@ -658,7 +658,7 @@ git commit -m "Initial commit."
 
 To zapisuje wszystko, co zostało dodane, więc jest to teraz bezpieczne w Git. Jeśli chcesz, możesz na tym zakończyć: umieściłeś swój kod w lokalnym repozytorium Git, co oznacza, że jeśli kiedykolwiek będziesz musiał wrócić do starszej wersji swojego kod
 
-### Czyszczenie Core Data
+## Czyszczenie Core Data
 Opcjonalność wartości Core Data różnią się od opcji w Swift, co sprawia, że praca z nimi może być nieco niewygodna. W tym artykule pokażę dwa sposoby rozwiązania tego problemu, które pomogą nam ładnie uporządkować nasz kod.
 
 
@@ -977,6 +977,7 @@ List {
 To nie jest dużo, ale powinieneś być w stanie uruchomić kod i zobaczyć działające wyniki – każdy z testowych tagów powinien pokazywać 10 zadań, a filtr Wszystkie Zadania powinien pokazywać wszystkie 50.
 
 ### Poprawa wierszy zadań
+
 To dość nudne pokazywać tylko tytuły zadań w ContentView, więc zamierzamy to poprawić, wprowadzając nowy widok SwiftUI do reprezentowania jednego wiersza na liście, nadając mu znacznie bardziej interesujący i użyteczny układ.
 
 Najpierw utwórz nowy widok SwiftUI o nazwie `IssueRow`, a następnie nadaj mu te dwie właściwości:
@@ -1959,8 +1960,8 @@ if filterEnabled {
 Są dwa małe punkty, które chciałbym tu podkreślić:
 
 Predykat priorytetu jest dodawany tylko, jeśli priorytet jest większy lub równy 0, ponieważ, jak pamiętasz, używamy priorytetu -1, aby oznaczać „wszystkie priorytety”.
-Stała lookForClosed będzie ustawiona na true, jeśli użytkownik szuka tylko zamkniętych problemów, ale ten predykat jest dodawany tylko, jeśli nie poprosili o wszystkie problemy.
-Po zakończeniu tego, teraz musimy honorować pozostałe dwie nowe właściwości: który atrybut sortować oraz czy jest to rosnące czy malejące. To w rzeczywistości tylko jedna linia kodu, ponieważ możemy przekonwertować wartość sortType na nazwę atrybutu przy użyciu jego właściwości rawValue i użyć sortNewestFirst bezpośrednio, aby zdecydować, czy chcemy kolejność rosnącą, czy nie.
+Stała `lookForClosed` będzie ustawiona na true, jeśli użytkownik szuka tylko zamkniętych problemów, ale ten predykat jest dodawany tylko, jeśli nie poprosili o wszystkie problemy.
+Po zakończeniu tego, teraz musimy honorować pozostałe dwie nowe właściwości: który atrybut sortować oraz czy jest to rosnące czy malejące. To w rzeczywistości tylko jedna linia kodu, ponieważ możemy przekonwertować wartość `sortType` na nazwę atrybutu przy użyciu jego właściwości rawValue i użyć `sortNewestFirst` bezpośrednio, aby zdecydować, czy chcemy kolejność rosnącą, czy nie.
 
 Więc dodaj to po linii request.predicate = :
 
@@ -1970,7 +1971,7 @@ request.sortDescriptors = [NSSortDescriptor(key: sortType.rawValue, ascending: s
 
 Gotowe! Teraz mamy zaawansowane filtrowanie i sortowanie działające – jest to trochę brzydkie z powodu sposobu, w jaki musimy traktować typy Core Data, ale mogło być znacznie gorzej!
 
-Dopracowanie interfejsu użytkownika
+### Dopracowanie interfejsu użytkownika
 W tym momencie mamy coś, co działa wystarczająco dobrze, ale jest miejsce na ulepszenia, aby dać użytkownikowi jaśniejsze informacje zwrotne na temat systemu filtrowania.
 
 Po pierwsze, prosta zmiana: jeśli filtr jest wyłączony, zarówno pickery Status, jak i Priority powinny być wyłączone, ponieważ nie będą miały żadnego efektu. To jest tak proste, jak dodanie następujących modyfikatorów do tych pickerów:
@@ -1996,5 +1997,164 @@ Wrócimy, aby dostosować całe to menu później, ponieważ potrzebuje ono troc
 
 
 
+## Pytania i odpowiedzi, część 1
+
+**AKTUALIZACJA:** Jak dotąd, podczas śledzenia serii, ludzie wysyłali różne pytania dotyczące wyborów implementacyjnych i innych aspektów. W tym artykule chciałbym odpowiedzieć na najczęściej zadawane pytania, aby wszyscy mogli na tym skorzystać.
+
+**Szybkie linki**
 
 
+
+​	•	Dlaczego nie używasz API navigationDestination()?
+
+​	•	Czy mogę dodać coś do pliku **Issue-CoreDataHelpers.swift**, aby opakować **Int16**?
+
+​	•	Co faktycznie zmienia dodanie niestandardowej implementacji **Hashable**?
+
+​	•	Dlaczego moje zgłoszenia nie są udostępniane na różnych urządzeniach?
+
+​	•	Dlaczego nie mogę teraz skompilować mojego kodu na macOS?
+
+
+
+### Dlaczego nie używasz API  navigationDestination()?
+
+
+
+To API jest naprawdę świetne do tworzenia prostych nawigacji, ale zauważysz, że go nie używamy – przynajmniej jeszcze nie. Napotykamy na dwa problemy:
+
+
+
+​	1.	Aby móc wymusić wybór elementu, potrzebujemy powiązania z wybranym elementem listy.
+
+​	2.	watchOS nie obsługuje powiązania z wyborem elementu na liście.
+
+
+
+Obecnie nie próbujemy wymuszać wyboru elementów z listy, ale jeśli się nad tym zastanowisz, to jest to bardzo częste wymaganie. Chcesz, aby Twoja aplikacja wybrała nowe zgłoszenie, gdy zostało utworzone? Wymuszasz wybór. Chcesz, aby lokalne powiadomienie uruchomiło Twoją aplikację na konkretnym zgłoszeniu? Tak – również wymuszasz wybór.
+
+
+
+Mamy więc problem: nasze obecne podejście jest absolutnie odpowiednie dla aplikacji, które koncentrują się na iOS i macOS, ale będzie powodować problemy dla deweloperów, którzy chcą również wspierać watchOS. Z drugiej strony, deweloperzy tworzący na watchOS nie mają możliwości wymuszenia wyboru na listach, która byłaby zgodna z NavigationSplitView.
+
+
+
+Podsumowując: nie używamy navigationDestination(), ponieważ chcemy mieć możliwość programatycznego wyboru elementów z listy, ale jeśli przejdziesz do rozdziałów dotyczących watchOS na końcu, zobaczysz, że sprawy stają się nieco bardziej skomplikowane!\
+
+
+
+Oto tłumaczenie tekstu na język polski:
+
+---
+
+## Czy mogę dodać coś do pliku Issue-CoreDataHelpers.swift, aby opakować Int16?
+
+Dodaliśmy wiele pomocniczych właściwości w rozszerzeniu **Issue**, z których wszystkie zostały zaprojektowane, aby zniwelować różnicę między Core Data a SwiftUI. Są one szczególnie przydatne, ponieważ pozwalają nam bezpośrednio powiązać klasy **NSManagedObject** z widokami SwiftUI, dzięki czemu nasza struktura **IssueView** jest tak prosta – izolujemy wszystkie koszmary związane z Core Data w jednym miejscu, co sprawia, że reszta aplikacji jest czysta.
+
+Jest jednak jeden wyjątek: w **IssueView** musieliśmy dodać nasze tagi priorytetów, korzystając z jawnych rzutowań na **Int16**, aby SwiftUI mogło połączyć każdą wartość z **Picker** z odpowiednią wartością w Core Data. Więc co powstrzymuje nas przed dodaniem kolejnego rozszerzenia **Issue**, aby ukryć bałagan związany z **Int16**?
+
+Na przykład, moglibyśmy napisać taki kod w **Issue-CoreDataHelpers.swift**:
+
+```swift
+var issuePriority: Int {
+    get { Int(priority) }
+    set { priority = Int16(newValue) }
+}
+```
+
+Ten niewielki dodatek oznacza, że możemy zmodyfikować **IssueView**, aby powiązać się z właściwością obliczaną w ten sposób:
+
+```swift
+Picker("Priorytet", selection: $issue.issuePriority) {
+```
+
+I to działa! Więc, jak najbardziej moglibyśmy to zrobić.
+
+Jednak tego nie zrobiłem, ponieważ nie jestem co do tego przekonany. To znaczy, gdy przemyślę problem i rozwiązanie, nie jestem w pełni przekonany, że rozwiązanie jest lepsze od problemu, który próbuje rozwiązać. Nie wszystko ma proste, oczywiste rozwiązanie, i myślę, że to dobry przykład sytuacji, w której trzeba spojrzeć na obie opcje i samodzielnie podjąć decyzję.
+
+Moim zmartwieniem jest to, że ta nowa właściwość różni się od wszystkich innych. Gdybyśmy próbowali powiązać pola tekstowe z **$issue.title** lub edytory tekstu z **$issue.content**, Xcode odmówiłby budowania, ponieważ oba te pola są opcjonalne. Używając **issueTitle** i **issueContent**, możemy oczyścić nasz kod, nie wpadając przypadkowo w pułapkę czasami używania **content**, a czasami **issueContent** – te dwie rzeczy po prostu nie są zamienne.
+
+Z liczbami całkowitymi jednak sytuacja jest znacznie bardziej subtelna: gdybyśmy powiązali się z **$issue.issuePriority** lub **$issue.priority**, oba skompilowałyby się, ale tylko jedno by działało ze względu na to, jak **tag()** wymusza dokładne sprawdzenie typu, aby odróżnić **Int16** od **Int**. To może wprowadzać naprawdę subtelne błędy, a kompilator nie zwróci na to uwagi, więc nie jestem jeszcze w pełni przekonany do tego pomysłu.
+
+Wiem, że to może brzmieć jak dużo gadania o drobnej zmianie, ale chciałbym, żebyś pamiętał, że tego rodzaju detale są czystym złotem podczas rozmów kwalifikacyjnych. Prosty, oczywisty kod nie daje zbyt wielu możliwości do dyskusji, ale dziwne przypadki brzegowe, takie jak ten, pozwalają ci mówić o zaletach i wadach opakowywania lub eksponowania **Int16**, a następnie wyjaśnić, dlaczego wybrałeś jedno rozwiązanie zamiast drugiego.
+
+
+
+Oto tłumaczenie tekstu na język polski:
+
+---
+
+**Co faktycznie zmienia dodanie niestandardowej implementacji Hashable?**
+
+Swift potrafi automatycznie wygenerować implementację kilku protokołów za nas, szczególnie **Codable** i **CaseIterable**. Dwa z nich są szczególnie powszechne i użyteczne: **Hashable** i **Equatable**, przy czym **Hashable** dziedziczy z **Equatable**, więc często otrzymujemy oba jednocześnie.
+
+Te dwa protokoły są przydatne z różnych powodów:
+
+- Dla typów wartościowych, takich jak struktury, zgodność z **Equatable** pozwala traktować je jak inne popularne wartości – możesz porównywać dwie instancje **User** tak samo, jak porównujesz dwie liczby całkowite, co jest dokładnie tym, jak powinny działać typy wartościowe.
+- Zgodność z **Hashable** pozwala nam używać obiektów w zbiorach (**sets**), a także jako kluczy w słownikach (**dictionaries**).
+
+Nasz typ **Filter** musi być zgodny z **Hashable**, ponieważ SwiftUI tego wymaga jako część API wyboru w **List**. Być może wewnętrznie jest to spowodowane tym, że API dla pojedynczego i wielokrotnego wyboru korzystają z tego samego wewnętrznego zbioru hashowalnych obiektów, ale z naszej perspektywy jest to tylko szczegół implementacyjny – wszystko, na czym nam zależy, to fakt, że jest to wymagane.
+
+Ponieważ **Filter** to struktura, Swift może dla nas automatycznie wygenerować zarówno **Hashable**, jak i **Equatable**, więc co zmienia, jeśli zrobimy to sami?
+
+Odpowiedź jest naprawdę ważna i pokazuje, jak nawet niewielkie zmiany w naszym kodzie mogą przynieść dramatyczne poprawy. Aby zobaczyć problem, spróbuj utworzyć projekt wiersza poleceń na macOS, a następnie dodaj do niego ten kod:
+
+```swift
+struct User: Hashable {
+    var name: CustomString
+    var id = UUID()
+}
+
+struct CustomString: Hashable {
+    var value: String
+
+    static func ==(lhs: CustomString, rhs: CustomString) -> Bool {
+        print("W funkcji custom ==")
+        return lhs.value == rhs.value
+    }
+
+    func hash(into hasher: inout Hasher) {
+        print("W funkcji custom hash(into:)")
+        hasher.combine(value)
+    }
+}
+
+let first = User(name: CustomString(value: "Paul"))
+let second = User(name: CustomString(value: "Paul"))
+let set = Set([first, second])
+print(first == second)
+```
+
+Kiedy uruchomisz ten kod, zobaczysz „W funkcji custom hash(into:)” dwa razy, potem „W funkcji custom ==“, a na końcu „false”.
+
+Teraz spróbuj zamienić kolejność właściwości w strukturze **User**, tak jak poniżej:
+
+```swift
+struct User: Hashable {
+    var id = UUID()
+    var name: CustomString
+}
+```
+
+Zauważ, że linia `print("W funkcji custom ==")` nie pojawia się już, gdy uruchomisz kod? To dlatego, że automatyczna zgodność z **Equatable** generowana przez Swift porównuje właściwości członkowskie aż do momentu, gdy jedno porównanie zwróci **false**. W starym kodzie oznaczało to, że najpierw porównywane były dwie nazwy, a następnie dwa identyfikatory, ale po zmianie kolejności najpierw porównywane są identyfikatory, a potem nazwy.
+
+Więc, jeśli polegasz na wbudowanej zgodności z **Equatable**, upewnij się, że poświęcasz chwilę na przemyślenie organizacji właściwości w swojej strukturze – jeśli masz tam **UUID**, prawdopodobnie powinno być ono na pierwszym miejscu.
+
+To rozwiązuje problem, jeśli chodzi o **Equatable**, ale dla **Hashable** automatyczna implementacja oblicza wartość hashu wszystkich właściwości, aby wygenerować hash całego obiektu nadrzędnego. Oznacza to, że jeśli jakakolwiek wartość wewnątrz struktury się zmieni, generowany jest nowy hash, a obiekt jest uważany za inny.
+
+Jeśli wiesz, że obiekt reprezentuje to samo fundamentalne zasoby w twojej aplikacji – jeśli użytkownik (**User**) jest taki sam, nawet po zmianie nazwy, lub jeśli filtr (**Filter**) jest taki sam, nawet po zmianie tagu – możesz dostarczyć niestandardową implementację hashowania, aby uniknąć wykonywania dodatkowej pracy. Więc w naszej strukturze **User** możemy bezpiecznie hashować tylko unikalny identyfikator, jak poniżej:
+
+```swift
+struct User: Hashable {
+    var id = UUID()
+    var name: CustomString
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
+```
+
+Dzięki tej zmianie nie zobaczysz już „W funkcji custom hash(into:)”, ponieważ ta praca nie jest już wykonywana – Swift używa tylko jednej właściwości, aby uzyskać potrzebny wynik, zamiast korzystać z obu.
+
+Jeśli zamierzasz dodać niestandardową funkcję hashowania, upewnij się, że implementujesz również niestandardową funkcję **==**, aby obie pozostały ze sobą zgodne.
