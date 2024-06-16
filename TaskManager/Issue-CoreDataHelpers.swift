@@ -6,21 +6,6 @@
 //
 
 import Foundation
-import CoreData
-
-
-extension Issue: Comparable {
-    public static func <(lhs: Issue, rhs: Issue) -> Bool {
-        let left = lhs.issueTitle.localizedLowercase
-        let right = rhs.issueTitle.localizedLowercase
-
-        if left == right {
-            return lhs.issueCreationDate < rhs.issueCreationDate
-        } else {
-            return left < right
-        }
-    }
-}
 
 extension Issue {
     var issueTitle: String {
@@ -41,12 +26,9 @@ extension Issue {
         modificationDate ?? .now
     }
 
-    var issueStatus: String {
-        if completed {
-            return "Closed"
-        } else {
-            return "Open"
-        }
+    var issueTags: [Tag] {
+        let result = tags?.allObjects as? [Tag] ?? []
+        return result.sorted()
     }
 
     var issueTagsList: String {
@@ -59,6 +41,13 @@ extension Issue {
         }
     }
 
+    var issueStatus: String {
+        if completed {
+            return "Closed"
+        } else {
+            return "Open"
+        }
+    }
 
     static var example: Issue {
         let controller = DataController(inMemory: true)
@@ -71,11 +60,17 @@ extension Issue {
         issue.creationDate = .now
         return issue
     }
-
-    var issueTags: [Tag] {
-        let result = tags?.allObjects as? [Tag] ?? []
-        return result.sorted()
-    }
 }
 
+extension Issue: Comparable {
+    public static func <(lhs: Issue, rhs: Issue) -> Bool {
+        let left = lhs.issueTitle.localizedLowercase
+        let right = rhs.issueTitle.localizedLowercase
 
+        if left == right {
+            return lhs.issueCreationDate < rhs.issueCreationDate
+        } else {
+            return left < right
+        }
+    }
+}

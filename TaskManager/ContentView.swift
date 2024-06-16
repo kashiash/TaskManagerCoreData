@@ -10,10 +10,8 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var dataController: DataController
 
-
-
     var body: some View {
-        List (selection: $dataController.selectedIssue){
+        List(selection: $dataController.selectedIssue) {
             ForEach(dataController.issuesForSelectedFilter()) { issue in
                 IssueRow(issue: issue)
             }
@@ -59,24 +57,22 @@ struct ContentView: View {
                     Text("High").tag(2)
                 }
                 .disabled(dataController.filterEnabled == false)
-
             } label: {
                 Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
                     .symbolVariant(dataController.filterEnabled ? .fill : .none)
             }
         }
-
     }
 
     func delete(_ offsets: IndexSet) {
         let issues = dataController.issuesForSelectedFilter()
+
         for offset in offsets {
             let item = issues[offset]
             dataController.delete(item)
         }
     }
 }
-
 #Preview {
     ContentView()
         .environmentObject(DataController.preview)

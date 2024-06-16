@@ -8,8 +8,9 @@
 import SwiftUI
 
 @main
-struct TaskManagerApp: App {
+struct UltimatePortfolioApp: App {
     @StateObject var dataController = DataController()
+    @Environment(\.scenePhase) var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -20,8 +21,13 @@ struct TaskManagerApp: App {
             } detail: {
                 DetailView()
             }
-                .environment(\.managedObjectContext, dataController.container.viewContext)
-                .environmentObject(dataController)
+            .environment(\.managedObjectContext, dataController.container.viewContext)
+            .environmentObject(dataController)
+            .onChange(of: scenePhase) { phase in
+                if phase != .active {
+                    dataController.save()
+                }
+            }
         }
     }
 }
