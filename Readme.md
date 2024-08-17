@@ -2043,10 +2043,6 @@ Podsumowując: nie używamy navigationDestination(), ponieważ chcemy mieć moż
 
 
 
-Oto tłumaczenie tekstu na język polski:
-
----
-
 ## Czy mogę dodać coś do pliku Issue-CoreDataHelpers.swift, aby opakować Int16?
 
 Dodaliśmy wiele pomocniczych właściwości w rozszerzeniu **Issue**, z których wszystkie zostały zaprojektowane, aby zniwelować różnicę między Core Data a SwiftUI. Są one szczególnie przydatne, ponieważ pozwalają nam bezpośrednio powiązać klasy **NSManagedObject** z widokami SwiftUI, dzięki czemu nasza struktura **IssueView** jest tak prosta – izolujemy wszystkie koszmary związane z Core Data w jednym miejscu, co sprawia, że reszta aplikacji jest czysta.
@@ -2080,11 +2076,7 @@ Wiem, że to może brzmieć jak dużo gadania o drobnej zmianie, ale chciałbym,
 
 
 
-Oto tłumaczenie tekstu na język polski:
 
----
-
-**Co faktycznie zmienia dodanie niestandardowej implementacji Hashable?**
 
 Swift potrafi automatycznie wygenerować implementację kilku protokołów za nas, szczególnie **Codable** i **CaseIterable**. Dwa z nich są szczególnie powszechne i użyteczne: **Hashable** i **Equatable**, przy czym **Hashable** dziedziczy z **Equatable**, więc często otrzymujemy oba jednocześnie.
 
@@ -2161,11 +2153,7 @@ Jeśli zamierzasz dodać niestandardową funkcję hashowania, upewnij się, że 
 
 
 
-Oto tłumaczenie tekstu na język polski:
-
----
-
-**Dlaczego moje zgłoszenia nie są udostępniane na różnych urządzeniach?**
+### Dlaczego moje zgłoszenia nie są udostępniane na różnych urządzeniach?**
 
 Może to się zdarzyć z kilku powodów, ale głównie sprowadza się to do iCloud:
 
@@ -2185,13 +2173,15 @@ container.persistentStoreDescriptions.first?.setOption(true as NSNumber, forKey:
 NotificationCenter.default.addObserver(forName: .NSPersistentStoreRemoteChange, object: container.persistentStoreCoordinator, queue: .main, using: remoteStoreChanged)
 ```
 
+Można jeszcze wejśc na konsole iCloud i zresetowac bazę danych:
+
+
+
+
+
 Mam nadzieję, że jedna z tych wskazówek pomoże!
 
-Oto tłumaczenie tekstu na język polski:
-
----
-
-**Dlaczego nie mogę teraz skompilować mojego kodu na macOS?**
+### Dlaczego nie mogę teraz skompilować mojego kodu na macOS?**
 
 W pierwszych częściach tej serii możliwe było uruchomienie naszej aplikacji zarówno na iOS, jak i na macOS, co było naprawdę wygodnym sposobem na ułatwienie testowania. Jednak nasz ekran edycji był ekranem szczegółów, więc dodałem następujący modyfikator do jego widoku:
 
