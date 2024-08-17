@@ -2158,3 +2158,63 @@ struct User: Hashable {
 Dzięki tej zmianie nie zobaczysz już „W funkcji custom hash(into:)”, ponieważ ta praca nie jest już wykonywana – Swift używa tylko jednej właściwości, aby uzyskać potrzebny wynik, zamiast korzystać z obu.
 
 Jeśli zamierzasz dodać niestandardową funkcję hashowania, upewnij się, że implementujesz również niestandardową funkcję **==**, aby obie pozostały ze sobą zgodne.
+
+
+
+Oto tłumaczenie tekstu na język polski:
+
+---
+
+**Dlaczego moje zgłoszenia nie są udostępniane na różnych urządzeniach?**
+
+Może to się zdarzyć z kilku powodów, ale głównie sprowadza się to do iCloud:
+
+- Czy na pewno jesteś zalogowany do iCloud na obu urządzeniach?
+- Czy testujesz na prawdziwych urządzeniach, a nie zakładasz, że symulator może działać? (Spoiler: nie będzie działać).
+- Czy masz aktywne konto dewelopera Apple? To jedyny sposób, aby uzyskać dodatkowe uprawnienia do przechowywania danych w iCloud.
+
+Jeśli sprawdziłeś wszystkie trzy powyższe punkty, musisz spróbować zawęzić, gdzie leży problem. Na przykład, czy zgłoszenia nigdy się nie synchronizują, czy też pojawiają się, jeśli zamkniesz aplikację i uruchomisz ją ponownie?
+
+Jeśli występuje pierwszy przypadek, upewnij się, że wywołujesz `save()`, aby zatwierdzić wszystkie swoje zmiany, a także podwójnie sprawdź, czy dodałeś możliwość korzystania z iCloud w docelowym ustawieniu swojej aplikacji. Jeśli to drugi przypadek, upewnij się, że masz te cztery linie kodu w **DataController**:
+
+```swift
+container.viewContext.automaticallyMergesChangesFromParent = true
+container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
+
+container.persistentStoreDescriptions.first?.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
+NotificationCenter.default.addObserver(forName: .NSPersistentStoreRemoteChange, object: container.persistentStoreCoordinator, queue: .main, using: remoteStoreChanged)
+```
+
+Mam nadzieję, że jedna z tych wskazówek pomoże!
+
+Oto tłumaczenie tekstu na język polski:
+
+---
+
+**Dlaczego nie mogę teraz skompilować mojego kodu na macOS?**
+
+W pierwszych częściach tej serii możliwe było uruchomienie naszej aplikacji zarówno na iOS, jak i na macOS, co było naprawdę wygodnym sposobem na ułatwienie testowania. Jednak nasz ekran edycji był ekranem szczegółów, więc dodałem następujący modyfikator do jego widoku:
+
+```swift
+.navigationBarTitleDisplayMode(.inline)
+```
+
+Od tego momentu pojawił się problem, ponieważ ten modyfikator nie jest dostępny na macOS. To jest jedna z moich irytacji związanych ze SwiftUI: leniwa część mnie chciałaby, aby niedostępne modyfikatory, które są dość nieszkodliwe, były po prostu obojętne, a nie niedostępne – aby `.navigationBarTitleDisplayMode(.inline)` po prostu nie robiło nic na macOS, zamiast wymuszać zmianę kodu.
+
+W późniejszej części tego kursu zajmiemy się konkretnie dostosowaniem naszej aplikacji do działania na macOS, ale jeśli chcesz, aby Twój kod nadal kompilował się na macOS, dodaj warunkowy modyfikator, taki jak ten:
+
+```swift
+extension View {
+    func inlineNavigationBar() -> some View {
+        #if os(iOS)
+        self.navigationBarTitleDisplayMode(.inline)
+        #else
+        self
+        #endif
+    }
+}
+```
+
+Teraz możesz zastąpić niedostępny modyfikator funkcją `inlineNavigationBar()`, aby uzyskać poprawne zachowanie na iOS bez błędu kompilacji na macOS.
+
+Aby uniknąć zamieszania, nie będę wprowadzał tej zmiany w mojej kopii projektu, ale jak powiedziałem, wrócimy do tego później.
