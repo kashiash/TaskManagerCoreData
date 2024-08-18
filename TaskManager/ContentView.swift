@@ -77,6 +77,8 @@ struct ContentView: View {
     }
 }
 #Preview {
-    ContentView()
-        .environmentObject(DataController.preview)
+    NavigationStack{
+        ContentView()
+            .environmentObject(DataController.preview)
+    }
 }

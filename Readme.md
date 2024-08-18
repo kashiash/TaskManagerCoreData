@@ -1578,7 +1578,7 @@ A następnie wyzwalając zapis dla każdej zmiany fazy, która nie jest powrotem
 
 Wiem, że to wygląda na uwzględnianie raczej mało prawdopodobnego scenariusza, ale jak powiedział Doug Linder: „dobry programista to taki, który patrzy w obie strony przed przejściem przez jednokierunkową ulicę.”
 
-
+![image-20240818215514129](image-20240818215514129.png)
 
 
 
@@ -1995,7 +1995,7 @@ Wrócimy, aby dostosować całe to menu później, ponieważ potrzebuje ono troc
 
 
 
-
+![image-20240818215601437](image-20240818215601437.png)
 
 ## Pytania i odpowiedzi, część 1
 
@@ -2702,3 +2702,7 @@ Button {
 ```
 
 Kolejność tych modyfikatorów jest precyzyjna: pozwalamy obrazowi proporcjonalnie skalować się, aby wypełnić dostępne miejsce, a następnie dodajemy trochę wewnętrznego marginesu (**padding**), ale potem ograniczamy przestrzeń do 100x100. Oznacza to, że ostateczny rozmiar ikony będzie faktycznie 100x100 minus użyty margines, co zapewnia estetyczne rozmieszczenie każdego elementu. Na koniec ikony są kolorowane w półprzezroczystą szarość, ponieważ jeszcze ich nie odblokowaliśmy.
+
+
+
+![image-20240818215241417](image-20240818215241417.png)

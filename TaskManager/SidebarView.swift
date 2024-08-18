@@ -96,6 +96,8 @@ struct SidebarView: View {
     }
 }
 #Preview {
-    SidebarView()
-        .environmentObject(DataController.preview)
+    NavigationStack{
+        SidebarView()
+            .environmentObject(DataController.preview)
+    }
 }
