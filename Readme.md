@@ -2043,7 +2043,7 @@ Podsumowując: nie używamy navigationDestination(), ponieważ chcemy mieć moż
 
 
 
-## Czy mogę dodać coś do pliku Issue-CoreDataHelpers.swift, aby opakować Int16?
+### Czy mogę dodać coś do pliku Issue-CoreDataHelpers.swift, aby opakować Int16?
 
 Dodaliśmy wiele pomocniczych właściwości w rozszerzeniu **Issue**, z których wszystkie zostały zaprojektowane, aby zniwelować różnicę między Core Data a SwiftUI. Są one szczególnie przydatne, ponieważ pozwalają nam bezpośrednio powiązać klasy **NSManagedObject** z widokami SwiftUI, dzięki czemu nasza struktura **IssueView** jest tak prosta – izolujemy wszystkie koszmary związane z Core Data w jednym miejscu, co sprawia, że reszta aplikacji jest czysta.
 
@@ -2208,3 +2208,497 @@ extension View {
 Teraz możesz zastąpić niedostępny modyfikator funkcją `inlineNavigationBar()`, aby uzyskać poprawne zachowanie na iOS bez błędu kompilacji na macOS.
 
 Aby uniknąć zamieszania, nie będę wprowadzał tej zmiany w mojej kopii projektu, ale jak powiedziałem, wrócimy do tego później.
+
+## Dodawanie zadań  i tagów
+
+AKTUALIZACJA: W tym momencie możesz uzyskać podstawowy pomysł na interfejs użytkownika naszej aplikacji, ale ma on fatalną wadę: chociaż możemy dodać dane testowe, nie możemy zrobić tego samego dla danych użytkownika. Naprawmy to teraz - jest w tym coś więcej, niż mogłoby się wydawać!
+
+
+
+**Szybkie linki**  
+
+- Udostępnianie standardowego pustego zgłoszenia  
+- Programatyczny wybór  
+- Tworzenie i zmienianie nazw tagów  
+
+**Udostępnianie standardowego pustego zgłoszenia**
+
+Kiedy użytkownicy nie mają wybranego żadnego zgłoszenia, widzą przycisk "Nowe zgłoszenie", który obecnie nic nie robi. Dodamy trochę kodu, aby utworzyć nowe zgłoszenie, ale nie zrobimy tego wewnątrz **NoIssueView**, ponieważ spowodowałoby to wszelkiego rodzaju problemy z interfejsem użytkownika – na przykład użytkownicy musieliby upewnić się, że nie mają wybranego żadnego zgłoszenia przed utworzeniem nowego, a chociaż to jest łatwe na iPadzie, jest znacznie trudniejsze na iOS.
+
+Dlatego dodamy kolejny przycisk na pasku narzędzi w **ContentView**, aby użytkownicy mogli tworzyć nowe zgłoszenia w obu miejscach. Posiadanie takiej podwójnej funkcjonalności powinno już skłonić Cię do myślenia, że potrzebna jest tutaj wspólna metoda, aby naciśnięcie któregokolwiek z przycisków robiło dokładnie to samo.
+
+Zacznij od dodania tej nowej metody do **DataController**:
+
+```swift
+func newIssue() {
+    let issue = Issue(context: container.viewContext)
+    issue.title = "Nowe zgłoszenie"
+    issue.creationDate = .now
+    save()
+}
+```
+
+To jest absolutne minimum informacji, które potrzebujemy, aby utworzyć nowe zgłoszenie – priorytet domyślnie będzie niski (0), nie będzie miało żadnej treści, a pole **completed** domyślnie automatycznie będzie ustawione na **false**, a data modyfikacji zajmie się sama sobą. Jeśli wolisz, możesz ustawić explicite priorytet "Średni" za pomocą dodatkowej linii przed `save()`:
+
+```swift
+issue.priority = 1
+```
+
+Mając to na miejscu, możemy wrócić do **NoIssueView**, aby połączyć tę metodę z istniejącym przyciskiem, tak:
+
+```swift
+Button("Nowe zgłoszenie", action: dataController.newIssue)
+```
+
+A teraz w **ContentView** możemy dodać dodatkowy przycisk do paska narzędzi, bezpośrednio po menu, które zrobiliśmy wcześniej:
+
+```swift
+Button(action: dataController.newIssue) {
+    Label("Nowe zgłoszenie", systemImage: "square.and.pencil")
+}
+```
+
+Świetnie!
+
+…z wyjątkiem tego, że możesz pomyśleć, że to nie działa. Cóż, mogę cię zapewnić, że to działa, tylko nie tak, jak byśmy się tego spodziewali. Co jest nie tak?
+
+
+
+### Programatyczny wybór
+
+Nasza obecna metoda `newIssue()` tworzy nowe zgłoszenie i zapisuje je natychmiast, ale to nie jest idealne doświadczenie użytkownika. Konkretnie, ma dwa problemy:
+
+1. Jeśli przeglądamy jeden z tagów użytkownika i tworzymy zgłoszenie, nie pojawi się ono na liście, ponieważ nie przypisujemy domyślnie żadnych tagów. Użytkownik prawdopodobnie spróbuje nacisnąć przycisk kilka razy, zanim się podda, ale po powrocie do filtru „Wszystkie zgłoszenia” zobaczy, że ma wiele nowych zgłoszeń.
+2. Kiedy tworzą nowe zgłoszenie, wstawiamy je z domyślnymi wartościami, ale użytkownik musi następnie kliknąć to zgłoszenie, aby rozpocząć jego edycję. Jest to wyraźnie niepotrzebne i powinniśmy automatycznie otworzyć nowe zgłoszenie do edycji.
+
+Oba te problemy są trywialne do naprawienia za pomocą kilku dodatkowych linii kodu w metodzie `newIssue()`.
+
+Najpierw dodaj ten kod przed wywołaniem `save()`:
+
+```swift
+if let tag = selectedFilter?.tag {
+    issue.addToTags(tag)
+}
+```
+
+To automatycznie przypisze nowe zgłoszenie do dowolnego tagu, który użytkownik przeglądał, co oznacza, że nie będzie niewidoczne.
+
+Po drugie, ustawimy `selectedIssue` na zgłoszenie, które właśnie stworzyliśmy, co spowoduje jego natychmiastowe zaznaczenie – iOS natychmiast wywoła nawigację, dzięki czemu użytkownik przejdzie do edycji. Dodaj to po wywołaniu `save()`:
+
+```swift
+selectedIssue = issue
+```
+
+Spróbuj! To są małe zmiany, ale znacznie poprawiają doświadczenie użytkownika.
+
+Jeszcze nie skończyliśmy: wciąż jest więcej do zrobienia, aby nasza aplikacja była w pełni funkcjonalna, ponieważ nadal potrzebujemy sposobu na dodawanie i zmienianie nazw tagów. Zajmijmy się tym dalej…
+
+### Tworzenie i zmienianie nazw tagów
+
+Teraz, gdy w końcu próbujemy pracować z prawdziwymi danymi użytkowników, a nie z naszymi prostymi danymi testowymi, potrzebujemy sposobu na dodawanie i zmienianie nazw tagów. Dodawanie jest wystarczająco proste, ponieważ to tylko kolejny element paska narzędzi w **SidebarView**, ale zmiana nazwy wymaga trochę więcej pracy.
+
+Pierwszym krokiem jest dodanie metody `newTag()` do **DataController**, aby pasowała do metody `newIssue()`, którą stworzyliśmy przed chwilą:
+
+```swift
+func newTag() {
+    let tag = Tag(context: container.viewContext)
+    tag.id = UUID()
+    tag.name = "Nowy tag"
+    save()
+}
+```
+
+Teraz możemy dodać nowy przycisk do paska narzędzi w **SidebarView**:
+
+```swift
+Button(action: dataController.newTag) {
+    Label("Dodaj tag", systemImage: "plus")
+}
+```
+
+Możesz usunąć stary przycisk „ADD SAMPLES”, jeśli chcesz, ale uważam, że jest przydatny podczas tworzenia aplikacji, więc wolę opakować go w `#DEBUG` w ten sposób:
+
+```swift
+#if DEBUG
+Button {
+    dataController.deleteAll()
+    dataController.createSampleData()
+} label: {
+    Label("ADD SAMPLES", systemImage: "flame")
+}
+#endif
+```
+
+Prawdziwym problemem jest to, jak umożliwić zmianę nazwy tagów, ponieważ nie mamy widoku do edytowania tagów.
+
+Zamiast tego użyjemy alertu z polem tekstowym w środku. Oznacza to śledzenie trzech elementów stanu w **SidebarView**:
+
+1. Który tag użytkownik próbuje zmienić nazwę.
+2. Czy proces zmiany nazwy jest w toku.
+3. Jaką nową nazwę tagu należy ustawić.
+
+Na razie te zmienne mogą być lokalne dla widoku, ponieważ są tymczasowe, więc dodaj je teraz do **SidebarView**:
+
+```swift
+@State private var tagToRename: Tag?
+@State private var renamingTag = false
+@State private var tagName = ""
+```
+
+Następnie możemy dodać metody do rozpoczęcia i zakończenia procesu zmiany nazwy. Aby rozpocząć, zaktualizujemy `tagToRename` do tego, który próbujemy zmienić, zaktualizujemy `tagName` na obecną nazwę, aby poprawnie wypełnić pole tekstowe w alercie, a następnie ustawimy nasz boolean na `true`, aby wywołać pewne zmiany w interfejsie:
+
+```swift
+func rename(_ filter: Filter) {
+    tagToRename = filter.tag
+    tagName = filter.name
+    renamingTag = true
+}
+```
+
+Gdy użytkownik zaakceptuje zmianę nazwy, zaktualizujemy obecnie wybrany tag i wywołamy zapis. Nie musimy ustawiać boolean z powrotem na `false`, ponieważ alert sam się tym zajmie, więc wystarczy to:
+
+```swift
+func completeRename() {
+    tagToRename?.name = tagName
+    dataController.save()
+}
+```
+
+To wszystko, co potrzebujemy, więc teraz wystarczy dodać trochę kodu SwiftUI, aby to wszystko połączyć.
+
+To składa się z dwóch części, zaczynając od modyfikatora menu kontekstowego na sekcji listy zawierającej wiersze tagów użytkownika. Dodaj to poniżej modyfikatora `badge()`, który już mamy:
+
+```swift
+.contextMenu {
+    Button {
+        rename(filter)
+    } label: {
+        Label("Zmień nazwę", systemImage: "pencil")
+    }
+}
+```
+
+I po drugie, dodanie alertu do obsługi faktycznej zmiany nazwy. Zostanie on wyświetlony, gdy `renamingTag` jest `true`, zawiera przycisk OK, który wywołuje `completeRename()`, oraz pole tekstowe powiązane z `$tagName`, aby cały proces był zakończony w jednym miejscu.
+
+Dodaj to do listy, poniżej paska narzędzi:
+
+```swift
+.alert("Zmień nazwę tagu", isPresented: $renamingTag) {
+    Button("OK", action: completeRename)
+    Button("Anuluj", role: .cancel) { }
+    TextField("Nowa nazwa", text: $tagName)
+}
+```
+
+I to wszystko! Wrócimy do tego interfejsu trochę później, aby wszystko połączyć, ale teraz możesz dodawać i usuwać zarówno zgłoszenia, jak i tagi, więc aplikacja naprawdę zaczyna nabierać kształtu!
+
+
+
+## Nagrody czytelnicze JSON
+
+AKTUALIZACJA: Parsowanie danych do aplikacji jest prawdopodobnie najczęstszym zadaniem, które musi wykonać każdy programista iOS, więc w tym artykule zaczniemy budować ekran nagród za pomocą JSON.
+
+### Szybkie linki
+- **Moje ulubione rozszerzenie**
+- **Ładowanie JSON nagród**
+- **Wyświetlanie galerii nagród**
+
+### Moje ulubione rozszerzenie
+
+Jest wiele rozszerzeń, na których regularnie polegam, ale jest jedno, którego używam raz za razem. Jego zadaniem jest ładowanie plików JSON z pakietu aplikacji, a rozkładając to na części, robi ono cztery rzeczy:
+
+- Lokalizuje konkretną nazwę pliku w określonym pakiecie.
+- Próbuje załadować ten plik do instancji **Data**.
+- Konwertuje tę instancję **Data** na obiekt Swift określonego typu.
+- Głośno zgłasza błąd z użytecznym komunikatem, jeśli dekodowanie się nie powiodło.
+
+Klucz do tego rozszerzenia – i powód, dla którego uważam je za tak użyteczne – polega na tym, że działa z każdym rodzajem danych JSON, więc można je zastosować w dowolnym projekcie i od razu zacznie być przydatne.
+
+Jeśli widziałeś już moje omówienie tego rozszerzenia, możesz śmiało przejść dalej, w przeciwnym razie rozłożę je na mniejsze części, aby łatwiej było wyjaśnić i śledzić.
+
+Najpierw prosta część: utwórz nowy plik Swift o nazwie `Bundle-Decodable.swift` i dodaj do niego ten kod:
+
+```swift
+extension Bundle {
+}
+```
+
+Rozszerzamy klasę **Foundation's Bundle**, która jest odpowiedzialna za pracę z całym głównym kodem i zasobami naszej aplikacji – samym plikiem binarnym, katalogami zasobów, plikiem **Info.plist** i innymi. W aplikacji możesz mieć kilka pakietów, na przykład jeśli masz rozszerzenia do komunikacji z Siri lub WidgetKit, więc rozszerzając **Bundle** udostępniamy nasz kod w każdej części naszej aplikacji.
+
+Teraz najważniejsza część tego kodu: sygnatura metody. Będzie ona używać typów generycznych, co oznacza, że powiemy Swiftowi, że nie wiemy, z jakim konkretnym typem danych będziemy pracować – zostanie to ustalone na podstawie tego, jak użyjemy metody. Zamiast odnosić się do **Int** lub **String**, używamy typu zastępczego, który może być nazwany jakkolwiek chcemy: **ObjectType**, **MyType**, czy **Banana** – wszystkie działają dokładnie tak samo, ponieważ jest to tylko zastępcza nazwa, a jej znaczenie zmieni się w zależności od tego, jak faktycznie użyjemy metody.
+
+Programiści Swifta zwykle używają litery **T** do reprezentowania tych typów zastępczych, ale jest to świetna okazja, aby porozmawiać o swoim wyborze podczas rozmowy kwalifikacyjnej – czy wybierasz powszechnie stosowaną konwencję, czy może nazwę, która lepiej pasuje do twojego stylu?
+
+W każdym razie, wstawmy sygnaturę metody, abyś mógł zobaczyć, co się dzieje – umieść to wewnątrz rozszerzenia **Bundle**:
+
+```swift
+func decode<T: Decodable>(
+    _ file: String,
+    as type: T.Type = T.self,
+    dateDecodingStrategy: JSONDecoder.DateDecodingStrategy = .deferredToDate,
+    keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy = .useDefaultKeys
+) -> T {
+    // więcej kodu wkrótce
+}
+```
+
+Tak, to spora sygnatura, więc rozbijmy ją na części.
+
+Sama metoda nazywa się `decode()`, więc podczas jej używania napiszemy coś w rodzaju `Bundle.main.decode(…)`.
+
+Nie wiemy, z jakim rodzajem danych będziemy pracować, więc nadajemy naszej metodzie generyczny parametr typu – ten zastępczy typ, o którym wspominałem – i nazywamy go **T**.
+
+Jednak **T** nie może być czymkolwiek, ponieważ Swift nie potrafi dekodować dowolnego rodzaju danych. Zamiast tego chcemy używać systemu **Codable** w Swift, co oznacza, że jesteśmy zadowoleni, jeśli **T** będzie dowolnym rodzajem danych, pod warunkiem, że zgodny jest z protokołem **Decodable**. (W razie gdybyś nie wiedział, **Codable** nie jest właściwie protokołem samym w sobie, a jedynie aliasem typu dla **Encodable** i **Decodable**.)
+
+Jeśli chodzi o parametry metody, pierwszy z nich jest prosty: nazwa pliku, który istnieje w używanym pakiecie, abyśmy wiedzieli, który plik załadować.
+
+Drugi parametr to **T.Type** i jest nieco bardziej skomplikowany. Pamiętaj, **T** to zastępcza nazwa dla jakiegoś nieznanego typu, ale na razie załóżmy, że to **Int**, bo to ułatwi zrozumienie tej części.
+
+Wiesz, że 5 to **Int**, podobnie jak 44, 444 i 44,444,444; wszystkie są instancjami typu **Int**. Kiedy chcemy odwołać się do **Int** jako takiego – aby powiedzieć „Chcę odwołać się do wszystkich liczb całkowitych ogólnie, a nie do konkretnej liczby” – piszemy **Int.self**.
+
+
+
+Możesz to zobaczyć w akcji, gdy normalnie używasz **Codable** – napisałbyś coś takiego:
+
+```swift
+let items = JSONDecoder().decode(WishList.self, from: jsonData)
+```
+
+Oznacza to, że chcemy zdekodować coś nowego jako obiekt **WishList**, a nie zdekodować jakąś konkretną wartość **WishList**, którą już mamy. Więc **Int.self** odnosi się do samego typu **Int**, tak jak **WishList.self** odnosi się do samego typu **WishList**.
+
+Wszystko to jest ważne, ponieważ mówimy, że nasza metoda zaakceptuje **T.Type**. Pamiętaj, **T** to nasz placeholder, więc może to być liczba całkowita, string lub coś innego. **Type** oznacza typ, a nie instancję typu, więc oznacza to pisanie **Int.self** lub **WishList.self**, a nie liczby 5 czy konkretnego obiektu **WishList**.
+
+Podsumowując, **T.Type** oznacza „jakiś rodzaj typu, pod warunkiem że spełnia on protokół **Decodable**.” Tak, to dużo wyjaśnień dla małego fragmentu kodu, ale to właśnie sprawia, że ta metoda jest świetna: możemy użyć jej do załadowania dowolnych danych, które można zdekodować.
+
+Aby uczynić to nieco bardziej skomplikowanym (ale też odrobinę łatwiejszym w użyciu!), parametr typu ma domyślną wartość **T.self**. Więc w połączeniu oznacza to „powiedz mi, jaki typ chcesz zdekodować, a jeśli to możliwe, spróbuj to ustalić na podstawie kontekstu.” To oznacza, że jeśli Swift wie, że zwrócimy tablicę stringów (na przykład, jeśli przypisujemy wartość do właściwości zadeklarowanej z tym typem), to możemy po prostu podać tej metodzie nazwę pliku, ale jeśli Swift nie wie, jaki typ będzie zdekodowany, musimy być bardziej konkretni.
+
+Przechodząc dalej, mamy dwa proste parametry:
+
+- Strategię dekodowania daty, aby móc obsługiwać daty w sposób, który ma sens dla tego pliku JSON. Domyślnie jest to **.deferredToDate**, co jest domyślnym zachowaniem dla **Codable**.
+- Strategię dekodowania kluczy, aby móc konwertować między **snake_case** a **camelCase**. Ponownie, ma to domyślną wartość, która pasuje do **Codable**.
+
+Na koniec metoda zwróci **T**. Tak więc, **T** jest używany na cztery sposoby:
+
+1. Pisanie generycznego parametru typu **T** w nawiasach ostrych po nazwie metody, aby powiedzieć Swiftowi, że istnieje placeholder o nazwie **T** i musi on być zgodny z protokołem **Decodable**.
+2. Określenie **T.Type** jako drugiego parametru, co oznacza, że możemy dokładnie powiedzieć, jaki typ próbujemy zdekodować, używając czegoś takiego jak **[String].self**.
+3. Używanie **T.self** jako domyślnej wartości dla typu oznacza, że jeśli Swift potrafi ustalić, że dekodujemy tablicę stringów na podstawie innego kontekstu (na przykład, jak wykorzystywana jest wartość zwracana), to wypełni za nas część **[String].self**.
+4. Typ zwracany to **T**.
+
+Swift jest tutaj naprawdę sprytny: jeśli wywołamy tę metodę z **[String].self**, Swift może pracować wstecz i stwierdzić, że jeśli **T.Type** to **[String].self**, to **T** musi być **[String]**. Podobnie, jeśli jedyne, co wie, to że typ zwracany musi być **[String]**, wtedy wypełni resztę parametrów na tej podstawie.
+
+Uff! To było dużo wyjaśnień, ale mam nadzieję, że jest to naprawdę jasne.
+
+W każdym razie, przejdźmy do dużo łatwiejszej części tego kodu: ciała metody.
+
+Najpierw znajdziemy rzeczywistą lokalizację żądanego pliku wewnątrz aktualnego pakietu, a jeśli to się nie powiedzie, wywołamy **fatalError()**, aby spowodować awarię aplikacji. Zastąp komentarz `// more code to come` tym:
+
+```swift
+guard let url = self.url(forResource: file, withExtension: nil) else {
+    fatalError("Failed to locate \(file) in bundle.")
+}
+```
+
+Tak, to wywołanie **fatalError()** spowoduje awarię aplikacji, ale to jest w porządku – pamiętaj, że to jest plik JSON, który dołączyłeś do pakietu aplikacji, a nie jakiś losowy plik pobrany z internetu, więc jeśli udało ci się dołączyć zły plik, jest to nierozwiązywalny błąd programistyczny i powinien zostać wychwycony przez twoje testy.
+
+Następnie chcemy załadować go do instancji **Data**, i ponownie, to jest całkowicie w porządku, jeśli aplikacja się zawiesi w przypadku niepowodzenia – oznacza to, że pliku w pakiecie aplikacji nie można odczytać, więc jest to poważny błąd. Dodaj ten kod poniżej poprzedniego:
+
+```swift
+guard let data = try? Data(contentsOf: url) else {
+    fatalError("Failed to load \(file) from bundle.")
+}
+```
+
+Teraz, gdy mamy już nasze dane gotowe, kolejne trzy linie kodu konfigurowują instancję **JSONDecoder** z ustawieniami, które zostały przekazane:
+
+```swift
+let decoder = JSONDecoder()
+decoder.dateDecodingStrategy = dateDecodingStrategy
+decoder.keyDecodingStrategy = keyDecodingStrategy
+```
+
+Na koniec, najważniejsza część: musimy zdekodować te dane do żądanego typu. Już wcześniej przekazaliśmy jakiś typ, więc możemy użyć **T.self**, aby odnieść się do tego typu wewnątrz naszego kodu.
+
+Oczywiście, istnieje wiele błędów, które mogą zostać zgłoszone podczas dekodowania danych, więc jeśli złapiemy je indywidualnie, możemy wywołać **fatalError()** z odpowiednimi danymi – to znacznie ułatwia proces znajdowania i naprawiania złego JSON-a.
+
+Więc, dodaj ten ostatni fragment kodu do metody `decode()` teraz:
+
+```swift
+do {
+    return try decoder.decode(T.self, from: data)
+} catch DecodingError.keyNotFound(let key, let context) {
+    fatalError("Failed to decode \(file) from bundle due to missing key '\(key.stringValue)' – \(context.debugDescription)")
+} catch DecodingError.typeMismatch(_, let context) {
+    fatalError("Failed to decode \(file) from bundle due to type mismatch – \(context.debugDescription)")
+} catch DecodingError.valueNotFound(let type, let context) {
+    fatalError("Failed to decode \(file) from bundle due to missing \(type) value – \(context.debugDescription)")
+} catch DecodingError.dataCorrupted(_) {
+    fatalError("Failed to decode \(file) from bundle because it appears to be invalid JSON")
+} catch {
+    fatalError("Failed to decode \(file) from bundle: \(error.localizedDescription)")
+}
+```
+
+I to kończy naszą metodę! W przypadku, gdy przeskoczyłeś dalej i chcesz po prostu skopiować kod do swojego projektu, oto pełne rozszerzenie:
+
+```swift
+extension Bundle {
+    func decode<T: Decodable>(
+        _ file: String,
+        as type: T.Type = T.self,
+        dateDecodingStrategy: JSONDecoder.DateDecodingStrategy = .deferredToDate,
+        keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy = .useDefaultKeys
+    ) -> T {
+        guard let url = self.url(forResource: file, withExtension: nil) else {
+            fatalError("Failed to locate \(file) in bundle.")
+        }
+
+        guard let data = try? Data(contentsOf: url) else {
+            fatalError("Failed to load \(file) from bundle.")
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = dateDecodingStrategy
+        decoder.keyDecodingStrategy = keyDecodingStrategy
+
+        do {
+            return try decoder.decode(T.self, from: data)
+        } catch DecodingError.keyNotFound(let key, let context) {
+            fatalError("Failed to decode \(file) from bundle due to missing key '\(key.stringValue)' not found – \(context.debugDescription)")
+        } catch DecodingError.typeMismatch(_, let context) {
+            fatalError("Failed to decode \(file) from bundle due to type mismatch – \(context.debugDescription)")
+        } catch DecodingError.valueNotFound(let type, let context) {
+            fatalError("Failed to decode \(file) from bundle due to missing \(type) value – \(context.debugDescription)")
+        } catch DecodingError.dataCorrupted(_) {
+            fatalError("Failed to decode \(file) from bundle because it appears to be invalid JSON")
+        } catch {
+            fatalError("Failed to decode \(file) from bundle: \(error.localizedDescription)")
+        }
+    }
+}
+```
+
+### Ładowanie JSON nagród
+
+Jeśli chcesz zachęcić użytkowników do jak najlepszego korzystania z aplikacji, świetnym sposobem na przyciągnięcie ich z powrotem są nagrody lub odznaki. W szerszym kontekście jest to powszechnie nazywane grywalizacją, i możesz to spotkać w postaci punktów, rankingów i innych mechanizmów, ale tutaj stworzymy nagrody, które użytkownik będzie mógł odblokować, korzystając z aplikacji.
+
+Udostępniłem plik JSON i kilka predefiniowanych kolorów, które opisują nagrody i ich wygląd w naszej aplikacji – jeśli jeszcze ich nie pobrałeś, teraz jest na to dobry moment: [https://www.hackingwithswift.com/files/plus/portfolio-awards.zip](https://www.hackingwithswift.com/files/plus/portfolio-awards.zip).
+
+Dodaj teraz **Awards.json** i **Colors.xcassets** do swojego projektu.
+
+Plik JSON zawiera tablicę danych odznak, gdzie każda odznaka wygląda tak:
+
+```json
+{
+    "name": "First Steps",
+    "description": "Add your first issue.",
+    "color": "Light Blue",
+    "criterion": "issues",
+    "value": 1,
+    "image": "figure.walk"
+}
+```
+
+To nadaje odznace nazwę i opis widoczny dla użytkownika, kolor wybrany z **Colors.xcassets** oraz obraz z katalogu **SF Symbols** firmy Apple. Klucze „criterion” i „value” są szczególnie ważne, ponieważ są to wartości wewnętrzne, które opisują, jak użytkownik odblokowuje tę odznakę. Powyższa odznaka ma kryterium „items” i wartość 1, co oznacza, że odblokujemy tę odznakę po dodaniu przez użytkownika co najmniej jednego zgłoszenia w aplikacji.
+
+Chcemy zdekodować to na strukturę **Award**, co w większości polega na tworzeniu właściwości pasujących do różnych pól JSON. Jednak są trzy ważne wyjątki:
+
+- Abyśmy mogli używać tej struktury z **SwiftUI**, powinna ona spełniać protokół **Identifiable**, więc dodamy obliczaną właściwość **id**, która użyje nazwy obiektu jako unikalnego identyfikatora.
+- Ponieważ będziemy ładować wszystkie nagrody w więcej niż jednym miejscu – nie tylko w zestawie testowym, który pojawi się później – stworzymy statyczną właściwość **allAwards**, która załaduje **Awards.json** przy użyciu rozszerzenia, które napisaliśmy wcześniej.
+- Aby ułatwić podgląd, dodamy statyczną właściwość **example**, która zwróci pierwszą nagrodę z JSON-a.
+
+Zamieńmy to wszystko na kod. Utwórz nowy plik Swift o nazwie **Award.swift**, a następnie dodaj do niego ten kod:
+
+```swift
+struct Award: Decodable, Identifiable {
+    var id: String { name }
+    var name: String
+    var description: String
+    var color: String    
+    var criterion: String
+    var value: Int
+    var image: String
+
+    static let allAwards = Bundle.main.decode("Awards.json", as: [Award].self)
+    static let example = allAwards[0]
+}
+```
+
+Na szczęście stałe statyczne mogą uzyskiwać dostęp do siebie nawzajem w Swifcie, ponieważ są zawsze tworzone leniwie. To znaczy, że możemy bezpiecznie zrobić, aby **Award.example** odczytywał **Award.allAwards**, ponieważ gdy po raz pierwszy odczytamy **Award.example**, Swift automatycznie uruchomi kod do stworzenia **Award.allAwards**.
+
+### Wyświetlanie galerii nagród
+
+Lista nagród – zarówno zdobytych, jak i niezdobytych – będzie widoczna w arkuszu (**sheet**), więc zacznijmy od jego konfiguracji: utwórz nowy widok **SwiftUI** o nazwie **AwardsView**.
+
+Aby wyświetlić ten nowy widok, potrzebujemy małego stanu w **SidebarView**, aby śledzić, czy arkusz nagród jest wyświetlany, czy nie:
+
+```swift
+@State private var showingAwards = false
+```
+
+Następnie możemy dodać kolejny przycisk na pasku narzędzi w tym samym widoku, aby przełączać tę wartość logiczną:
+
+```swift
+Button {
+    showingAwards.toggle()
+} label: {
+    Label("Show awards", systemImage: "rosette")
+}
+```
+
+Na koniec dodajemy modyfikator **sheet()** po alercie zmiany nazwy tagu:
+
+```swift
+.sheet(isPresented: $showingAwards, content: AwardsView.init)
+```
+
+Jeśli chodzi o zawartość widoku, zaczniemy od czegoś prostego: pokażemy nasze opcje nagród w **LazyVGrid** jako serię przycisków. Te przyciski na razie nie będą nic robić, i nie będziemy również rozróżniać, które nagrody zostały faktycznie zdobyte, ale to wkrótce się pojawi.
+
+Pierwszym krokiem jest zdefiniowanie kolumn, których będziemy używać. Uważam, że dla tych nagród najlepiej sprawdzą się kolumny adaptacyjne, pozwalające **SwiftUI** dostosować ich rozmiar na wszystkich urządzeniach.
+
+Dodaj tę właściwość do **AwardsView**:
+
+```swift
+var columns: [GridItem] {
+    [GridItem(.adaptive(minimum: 100, maximum: 100))]
+}
+```
+
+Ustawiłem elementy na 100x100, ale gdy już uruchomisz widok, możesz eksperymentować. Pamiętaj, że później możesz zdecydować się na przeniesienie swojej aplikacji na macOS lub watchOS, które mają zupełnie różne rozmiary ekranów!
+
+Jeśli chodzi o zawartość widoku, będzie to **NavigationStack**, dzięki czemu możemy umieścić tytuł i przycisk zamykania na górze, a następnie nasz **LazyVGrid** opakowany wewnątrz widoku przewijania (**ScrollView**), aby móc nadal wyświetlać wszystkie nagrody, nawet gdy miejsce jest ograniczone.
+
+Nie dodajemy jeszcze przycisków, ponieważ wymagają one przemyślenia. Jednak możemy przynajmniej dodać wszystko inne – zastąp domyślny kod **body** tym:
+
+```swift
+NavigationStack {
+    ScrollView {
+        LazyVGrid(columns: columns) {
+            ForEach(Award.allAwards) { award in
+                // button here
+            }
+        }
+    }
+    .navigationTitle("Awards")
+}
+```
+
+Pozostają tylko przyciski wewnątrz. Na razie nie będziemy nadawać im żadnych akcji, ale celem tych przycisków jest dać użytkownikom wyobrażenie o tym, które odznaki są dostępne, które odznaki zostały zdobyte oraz co robi każda z odznak – ostatnie z tych informacji będzie wyświetlane po naciśnięciu przycisku.
+
+Kolekcja **SF Symbols** firmy Apple nie ma jednolitego rozmiaru wśród ikon, więc aby nasz układ siatki wyglądał estetycznie, musimy dodać do każdego obrazu ikony kilka konkretnych modyfikatorów.
+
+Przejdź dalej i zastąp komentarz `// button here` tym:
+
+```swift
+Button {
+    // no action yet
+} label: {
+    Image(systemName: award.image)
+        .resizable()
+        .scaledToFit()
+        .padding()
+        .frame(width: 100, height: 100)
+        .foregroundColor(.secondary.opacity(0.5))
+}
+```
+
+Kolejność tych modyfikatorów jest precyzyjna: pozwalamy obrazowi proporcjonalnie skalować się, aby wypełnić dostępne miejsce, a następnie dodajemy trochę wewnętrznego marginesu (**padding**), ale potem ograniczamy przestrzeń do 100x100. Oznacza to, że ostateczny rozmiar ikony będzie faktycznie 100x100 minus użyty margines, co zapewnia estetyczne rozmieszczenie każdego elementu. Na koniec ikony są kolorowane w półprzezroczystą szarość, ponieważ jeszcze ich nie odblokowaliśmy.

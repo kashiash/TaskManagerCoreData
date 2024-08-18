@@ -18,6 +18,12 @@ struct SidebarView: View {
         }
     }
 
+    @State private var tagToRename: Tag?
+    @State private var renamingTag = false
+    @State private var tagName = ""
+
+    @State private var showingAwards = false
+
     var body: some View {
         List(selection: $dataController.selectedFilter) {
             Section("Smart Filters") {
@@ -32,19 +38,43 @@ struct SidebarView: View {
                     NavigationLink(value: filter) {
                         Label(filter.name, systemImage: filter.icon)
                             .badge(filter.tag?.tagActiveIssues.count ?? 0)
+                            .contextMenu {
+                                Button {
+                                    rename(filter)
+                                } label: {
+                                    Label("Rename", systemImage: "pencil")
+                                }
+                            }
                     }
                 }
                 .onDelete(perform: delete)
             }
         }
         .toolbar {
-            Button {
-                dataController.deleteAll()
-                dataController.createSampleData()
-            } label: {
-                Label("ADD SAMPLES", systemImage: "flame")
+            Button(action: dataController.newTag) {
+                Label("Dodaj tag", systemImage: "plus")
             }
+            Button {
+                showingAwards.toggle()
+            } label: {
+                Label("Show awards", systemImage: "rosette")
+            }
+        #if DEBUG
+        Button {
+            dataController.deleteAll()
+            dataController.createSampleData()
+        } label: {
+            Label("ADD SAMPLES", systemImage: "flame")
         }
+        #endif
+        }
+
+        .alert("Rename tag", isPresented: $renamingTag) {
+            Button("OK", action: completeRename)
+            Button("Cancel", role: .cancel) { }
+            TextField("New name", text: $tagName)
+        }
+        .sheet(isPresented: $showingAwards, content: AwardsView.init)
     }
 
     func delete(_ offsets: IndexSet) {
@@ -52,6 +82,17 @@ struct SidebarView: View {
             let item = tags[offset]
             dataController.delete(item)
         }
+    }
+
+    func rename(_ filter: Filter) {
+        tagToRename = filter.tag
+        tagName = filter.name
+        renamingTag = true
+    }
+
+    func completeRename() {
+        tagToRename?.name = tagName
+        dataController.save()
     }
 }
 #Preview {
