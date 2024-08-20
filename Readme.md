@@ -77,7 +77,7 @@ To pierwszy raz, kiedy piszę kurs w odcinkach, więc to dla mnie prawdziwa przy
 
 To oznacza, że mogę potrzebować wydać poprawki w trakcie kursu, na podstawie mojej zmiany zdania lub opinii czytelników. Oczywiście mam nadzieję, że to się nie zdarzy, ale
 
-## Projektowanie świetnego modelu
+## 2 Projektowanie świetnego modelu
 
 Prawie zawsze kluczem do uzyskania świetnej aplikacji jest uzyskanie świetnego modelu danych - decydowanie tak wcześnie, jak to możliwe, jakie dane chcesz przechowywać i jak każdy element odnosi się do innych elementów. Więc, zagłębimy się od razu w Core Data!
 
@@ -359,7 +359,7 @@ Kiedy tworzysz nowy kontener, Xcode automatycznie dodaje „iCloud” na począt
 
 I to naprawdę wszystko na teraz, jeśli chodzi o naszą bazę danych – tak, to było dość dużo, ale to naprawdę świetna podstawa do budowania reszty naszej aplikacji.
 
-## Pierwsze kroki w interfejsie użytkownika
+## 3. Pierwsze kroki w interfejsie użytkownika
 
 Teraz, gdy mamy skonfigurowany i zakodowany nasz podstawowy model danych, możemy go wykorzystać, budując prosty interfejs użytkownika, aby upewnić się, że nasze dane są na miejscu i działają poprawnie.
 
@@ -567,7 +567,7 @@ I teraz spróbuj: powinieneś zobaczyć nasze dwa inteligentne filtry powyżej p
 
 To nie jest wiele, szczególnie biorąc pod uwagę, ile pracy wykonaliśmy, ale teraz mamy wszystkie podstawy gotowe, nasz tempo może zacząć się zwiększać!
 
-## Przechowywanie kodu w bezpiecznym miejscu
+## 4. Przechowywanie kodu w bezpiecznym miejscu
 
 W tym momencie mamy coś bardzo prostego w pracy, więc teraz jest świetny czas, aby schować swój kod w bezpiecznym miejscu za pomocą kontroli źródła. Jeśli już wiesz, jak korzystać z Git, możesz pominąć tę część, ale upewnij się i przechowuj gdzieś swoją pracę.
 
@@ -587,6 +587,7 @@ Jednak budujemy aplikację Ultimate Portfolio App, a jednym z jej komponentów j
 Dlatego krótko omówimy, jak używać kontroli wersji, aby każdy – nawet osoby, które nigdy wcześniej jej nie używały – mogli podążać za tym przewodnikiem.
 
 ### Wprowadzenie do Git
+
 Istnieje wiele oprogramowań do kontroli wersji, ale realistycznie rzecz biorąc, będziesz używać oprogramowania o nazwie „git”. Zostało ono pierwotnie napisane przez Linusa Torvaldsa, twórcę Linuxa, ponieważ jest to brytyjskie określenie na nieprzyjemną osobę, a jak sam Linus mówi, lubi nazywać swoje projekty na swój sposób. Teraz jednak Git jest standardem w naszej branży – jednym z bardzo nielicznych, na które się zgadzamy.
 
 Git jest zaprojektowany do przechowywania zmian w twoim projekcie w czasie, wraz z informacją, kto je wprowadził, kiedy i dlaczego. Jednak prawie wszyscy idą o krok dalej i używają zewnętrznej usługi hostingowej do przechowywania swojego kodu, abyśmy mieli pełną kopię na naszych lokalnych komputerach i pełną kopię na zdalnym serwerze.
@@ -658,7 +659,8 @@ git commit -m "Initial commit."
 
 To zapisuje wszystko, co zostało dodane, więc jest to teraz bezpieczne w Git. Jeśli chcesz, możesz na tym zakończyć: umieściłeś swój kod w lokalnym repozytorium Git, co oznacza, że jeśli kiedykolwiek będziesz musiał wrócić do starszej wersji swojego kod
 
-## Czyszczenie Core Data
+## 5. Czyszczenie Core Data
+
 Opcjonalność wartości Core Data różnią się od opcji w Swift, co sprawia, że praca z nimi może być nieco niewygodna. W tym artykule pokażę dwa sposoby rozwiązania tego problemu, które pomogą nam ładnie uporządkować nasz kod.
 
 
@@ -910,7 +912,7 @@ Posiadanie tych pomocników ułatwi budowanie reszty tego projektu. W rzeczywist
 
 To pokazuje liczbę aktywnych `Issue` przypisanych do każdego tagu tuż obok niego w pasku bocznym – naprawdę miły sposób na zobaczenie, jak bardzo każdy z twoich tagów jest obciążony. Już napisaliśmy kod do tworzenia całej gromady przykładowych tagów i zadań, więc powinieneś zobaczyć, że te odznaki zaczynają działać od razu!
 
-## Pokazywanie, usuwanie i synchronizacja zadań
+## 6. Pokazywanie, usuwanie i synchronizacja zadań
 Teraz, gdy mamy już podstawowy szkic naszego paska bocznego, możemy przejść do kolejnego poziomu naszego interfejsu użytkownika: widoku treści, wyświetlającego listę wszystkich wybranych przez nich zadań, a następnie upewnić się, że zmiany dokonane przez użytkownika są zsynchronizowane na wszystkich urządzeniach.
 
 ### Szybkie linki
@@ -1997,7 +1999,7 @@ Wrócimy, aby dostosować całe to menu później, ponieważ potrzebuje ono troc
 
 ![image-20240818215601437](image-20240818215601437.png)
 
-## Pytania i odpowiedzi, część 1
+## 11. Pytania i odpowiedzi, część 1
 
 **AKTUALIZACJA:** Jak dotąd, podczas śledzenia serii, ludzie wysyłali różne pytania dotyczące wyborów implementacyjnych i innych aspektów. W tym artykule chciałbym odpowiedzieć na najczęściej zadawane pytania, aby wszyscy mogli na tym skorzystać.
 
@@ -2209,7 +2211,7 @@ Teraz możesz zastąpić niedostępny modyfikator funkcją `inlineNavigationBar(
 
 Aby uniknąć zamieszania, nie będę wprowadzał tej zmiany w mojej kopii projektu, ale jak powiedziałem, wrócimy do tego później.
 
-## Dodawanie zadań  i tagów
+## 12. Dodawanie zadań  i tagów
 
 AKTUALIZACJA: W tym momencie możesz uzyskać podstawowy pomysł na interfejs użytkownika naszej aplikacji, ale ma on fatalną wadę: chociaż możemy dodać dane testowe, nie możemy zrobić tego samego dla danych użytkownika. Naprawmy to teraz - jest w tym coś więcej, niż mogłoby się wydawać!
 
@@ -2394,7 +2396,7 @@ I to wszystko! Wrócimy do tego interfejsu trochę później, aby wszystko poł�
 
 
 
-## Nagrody czytelnicze JSON
+## 13. Odczytywanie opisu nagród z JSON
 
 AKTUALIZACJA: Parsowanie danych do aplikacji jest prawdopodobnie najczęstszym zadaniem, które musi wykonać każdy programista iOS, więc w tym artykule zaczniemy budować ekran nagród za pomocą JSON.
 
@@ -2705,4 +2707,141 @@ Kolejność tych modyfikatorów jest precyzyjna: pozwalamy obrazowi proporcjonal
 
 
 
+
+
 ![image-20240818215241417](image-20240818215241417.png)
+
+
+
+## 14.Przyznawanie nagród
+
+AKTUALIZACJA: Teraz, gdy zaprojektowaliśmy podstawowy interfejs użytkownika nagród, możemy go ożywić za pomocą kilku zapytań dotyczących danych podstawowych, aby określić, które nagrody zostały faktycznie zdobyte.
+
+### Szybkie linki
+- **Liczenie zapytań fetch**
+- **Ocenianie nagród**
+- **Podświetlanie zdobytych nagród**
+
+### Zapytania liczące `fetch`
+
+Używaliśmy zapytań `fetch` do ładowania, filtrowania i sortowania zapytań, ale są one również przydatne w wielu innych sytuacjach. Na przykład, gdy chcesz policzyć wartości, możesz to zrobić, prosząc kontekst widoku o liczbę wyników zapytania `fetch`, zamiast próbować odczytać wszystkie możliwe obiekty, a następnie zliczać wyniki. Jak możesz się domyślić, to podejście jest znacznie szybsze, ponieważ **Core Data** nie musi faktycznie pobierać atrybutów dla każdego obiektu, który przechowuje.
+
+Odczytywanie liczby wyników zapytania `fetch` zwraca za każdym razem wartość opcjonalną, ponieważ możliwe jest, że liczysz coś, co w ogóle nie istnieje w kontekście widoku. Aby ułatwić pracę z tymi danymi, możemy dodać prostą metodę opakowującą do **DataController**, aby usunąć opcjonalność:
+
+```swift
+func count<T>(for fetchRequest: NSFetchRequest<T>) -> Int {
+    (try? container.viewContext.count(for: fetchRequest)) ?? 0
+}
+```
+
+### Przyznawanie nagród
+
+Gdy wprowadziliśmy plik JSON z nagrodami, wybrałem dwie szczególne wartości, które są ważne: **criterion** i **value**. Razem pozwalają nam ocenić, czy użytkownik zdobył jakąkolwiek nagrodę: **criterion** określa atrybut do porównania, np. ile zgłoszeń użytkownik ukończył, a **value** pozwala nam sprawdzić, ile tego typu zgłoszeń powinien ukończyć, np. 10.
+
+Naszym kolejnym zadaniem jest napisanie metody `hasEarned(award:)` w pliku **DataController.swift**. Będzie ona przełączać się na kryterium, które chcemy teraz obsłużyć (dodamy więcej później w trakcie kursu, w zależności od wybranej ścieżki), a następnie policzy wyniki zapytania fetch, aby sprawdzić, czy wynik jest większy lub równy określonej wartości.
+
+Dodaj teraz tę metodę do **DataController**:
+
+```swift
+func hasEarned(award: Award) -> Bool {
+    switch award.criterion {
+    case "issues":
+        // returns true if they added a certain number of issues
+        let fetchRequest = Issue.fetchRequest()
+        let awardCount = count(for: fetchRequest)
+        return awardCount >= award.value
+
+    case "closed":
+        // returns true if they closed a certain number of issues
+        let fetchRequest = Issue.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "completed = true")
+        let awardCount = count(for: fetchRequest)
+        return awardCount >= award.value
+
+    case "tags":
+        // returns true if they created a certain number of tags
+        let fetchRequest = Tag.fetchRequest()
+        let awardCount = count(for: fetchRequest)
+        return awardCount >= award.value
+
+    default:
+        // an unknown award criterion; this should never be allowed
+        // fatalError("Unknown award criterion: \(award.criterion)")
+        return false
+    }
+}
+```
+
+Zanim przejdziemy dalej, chcę zwrócić uwagę na kilka rzeczy:
+
+- Zauważ, że używamy `fatalError()` dla każdego nieznanego kryterium nagrody, aby zapewnić, że nie przeoczymy żadnego błędu. Skomentowałem to i zamiast tego użyłem `return false`, ponieważ nasza aplikacja jest wciąż w fazie rozwoju i nie uwzględniliśmy jeszcze wszystkich możliwych przypadków.
+- Zarówno sprawdzenie „issues”, jak i „closed” używa tego samego podstawowego zapytania fetch, chociaż w drugim przypadku dodajemy prosty predykat do filtrowania ukończonych zgłoszeń.
+- Gdy już mamy liczbę wyników, porównujemy ją bezpośrednio z `award.value`, aby zdecydować, czy nagroda została zdobyta, czy nie.
+
+### Podświetlanie zdobytych nagród
+
+Teraz, gdy mamy już za sobą stronę danych, możemy wrócić do **AwardsView**, aby je wykorzystać.
+
+Będziemy korzystać z tych danych na dwa sposoby:
+
+1. Jeśli nagroda została zdobyta, dostosujemy naszą siatkę tak, aby odznaka była kolorowana na podstawie koloru nagrody. Jak pamiętasz, nasz plik JSON z nagrodami zawiera nazwy kolorów dla każdej odznaki, zgodnie z katalogiem **Colors.xcassets**, który dodałeś wcześniej, i to właśnie z tego skorzystamy.
+2. Jeśli użytkownik dotknie nagrody, pokażemy jeden z dwóch alertów: albo gratulujemy mu zdobycia nagrody, albo informujemy, co musi jeszcze zrobić, aby ją zdobyć.
+
+Pierwsza z tych operacji jest prosta, ponieważ już stosujemy **.secondary.opacity(0.5)** do obrazów naszych przycisków i możemy to po prostu zamienić na warunek ternarny, korzystając z `hasEarned(award:)`.
+
+Zacznij od dodania nowej właściwości do **AwardsView**, która pozwoli nam odczytać nasz wspólny **DataController** ze środowiska:
+
+```swift
+@EnvironmentObject var dataController: DataController
+```
+
+Teraz zmodyfikuj modyfikator **foregroundColor()** przypisany do obrazów przycisków, aby użyć koloru nagrody lub szarości:
+
+```swift
+.foregroundColor(dataController.hasEarned(award: award) ? Color(award.color) : .secondary.opacity(0.5))
+```
+
+I gotowe! To już rozwiązuje jeden problem – jeśli uruchomisz aplikację teraz, zobaczysz, że różne nagrody się podświetlają, gdy użytkownik je zdobędzie.
+
+Naszym drugim problemem jest pokazanie alertu, gdy użytkownik dotknie nagrody, informując go, że nagroda została już zdobyta, albo że jest jeszcze zablokowana. Można to zrobić za pomocą dwóch właściwości: jednej typu Boolean, która kontroluje, czy arkusz jest wyświetlany, oraz instancji **Award**, która będzie przechowywać wybraną przez użytkownika nagrodę.
+
+Zacznij od dodania tych dwóch właściwości do **AwardsView**:
+
+```swift
+@State private var selectedAward = Award.example
+@State private var showingAwardDetails = false
+```
+
+Użyłem **Award.example** jako domyślnej wybranej nagrody, ale tak naprawdę nigdy nie będzie ona używana – jest po prostu po to, aby nasza właściwość miała typ **Award**, a nie **Award?**. Pamiętaj, że tak naprawdę nie będziemy używać tej właściwości, dopóki nie zostanie wybrana prawdziwa nagroda, więc placeholder jest w porządku.
+
+Następnie musimy wypełnić akcję dla naszych przycisków nagród. Teraz jest pusta, ale chcę, abyś zmienił ją tak, aby wybierała nagrodę, o którą prosił użytkownik, a następnie wyświetlała alert. Dodaj ten kod:
+
+```swift
+selectedAward = award
+showingAwardDetails = true
+```
+
+Ostatnim krokiem jest dodanie modyfikatora **alert()** na końcu **NavigationStack**, obserwując nasz nowy boolean, aby wiedzieć, kiedy należy go zaprezentować. Musimy nadać temu alertowi jeden z dwóch tytułów, w zależności od tego, czy użytkownik zdobył daną nagrodę, czy nie, więc możemy wydzielić tę funkcjonalność do osobnej właściwości, aby nasz kod był łatwiejszy do odczytania:
+
+```swift
+var awardTitle: String {
+    if dataController.hasEarned(award: selectedAward) {
+        return "Unlocked: \(selectedAward.name)"
+    } else {
+        return "Locked"
+    }
+}
+```
+
+Teraz możemy dodać alert do `NavigationStack`:
+
+```swift
+.alert(awardTitle, isPresented: $showingAwardDetails) {
+} message: {
+    Text(selectedAward.description)
+}
+```
+
+To kończy naszą drugą zmianę – uruchom aplikację teraz, a zobaczysz, że możesz dotknąć dowolnej nagrody, aby dowiedzieć się o niej więcej.
+
+Wrócimy do **AwardsView** później, ale na razie to wszystko!
