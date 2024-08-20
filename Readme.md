@@ -2845,3 +2845,129 @@ Teraz możemy dodać alert do `NavigationStack`:
 To kończy naszą drugą zmianę – uruchom aplikację teraz, a zobaczysz, że możesz dotknąć dowolnej nagrody, aby dowiedzieć się o niej więcej.
 
 Wrócimy do **AwardsView** później, ale na razie to wszystko!
+
+## 15. Dopieszczanie początkowej wersji
+
+AKTUALIZACJA: W tym momencie pierwsza wersja naszej aplikacji jest prawie skończona, ale zanim przejdziemy do następnego etapu, chcę wprowadzić kilka drobnych poprawek, poprawek i ulepszeń, aby ją dopełnić.
+
+### Szybkie linki
+- **Naprawianie błędu sortowania**
+- **Zamykanie zgłoszeń**
+- **Zapisywanie na wszelki wypadek**
+- **Jeszcze jeden przycisk…**
+- **Błaha rzecz na zakończenie**
+
+### Naprawianie błędu sortowania
+
+Na początek: w moim kodzie jest błąd, choć to raczej przypadek niż coś poważnego – i całkiem możliwe, że już go zauważyłeś i naprawiłeś!
+
+Błąd polega na tym: w **DataController** włożyliśmy dużo pracy, aby metoda `issuesForSelectedFilter()` wykonywała wszystkie ciężkie operacje związane z **Core Data** – użyliśmy wielu złożonych predykatów, uwzględniliśmy wsparcie dla wyszukiwania tekstu i tagów, a na końcu zastosowaliśmy **NSSortDescriptor**, aby umożliwić użytkownikowi kontrolowanie kolejności wyświetlania elementów.
+
+…ale wtedy pojawił się błąd. Jest on w ostatniej linii mojego kodu, a także w Twoim, jeśli dokładnie podążałeś za instrukcjami:
+
+```swift
+return allIssues.sorted()
+```
+
+To przetwarza nasze wyniki zapytań, które zostały posortowane zgodnie z preferencjami użytkownika, a następnie ponownie je sortuje według algorytmu sortowania według nazwy, a następnie daty utworzenia, który napisaliśmy wcześniej.
+
+To wyraźnie strata pracy, ale stało się tak tylko dlatego, że zapomniałem usunąć wywołanie `sorted()` po dodaniu nowej funkcji **NSSortDescriptor**. Więc naprawa jest prosta – zmień to na:
+
+```swift
+return allIssues
+```
+
+Dużo lepiej!
+
+
+
+### Zamykanie zgłoszeń
+
+Na tym etapie możemy dodawać, usuwać i zmieniać nazwy tagów, a także dodawać, usuwać i edytować zgłoszenia, ale nie możemy zamykać zgłoszeń – brakuje możliwości oznaczenia ich jako ukończone lub ponownego otwarcia, jeśli później zdecydujemy, że coś wymaga dalszej pracy.
+
+To jest tak proste, jak dodanie przycisku do przełączania wartości logicznej `completed`, ale zamierzamy również natychmiast wywołać `save()`, ponieważ jest to prosta, atomowa operacja – nie ma kroków między "ukończone" a "nieukończone", więc równie dobrze możemy od razu zapisać zmianę.
+
+Jednym małym problemem jest to, że Apple ma bardzo specyficzny design dla tego przycisku: zamiast być bezpośrednio widocznym w interfejsie użytkownika, jest ukryty za menu z wielokropkiem z innymi opcjami, takimi jak „Add More Information”, „Copy Feedback ID” i „Copy ID and Title”.
+
+Nie potrzebujemy opcji „Add More Information” w naszej aplikacji, ponieważ są to nasze dane, a nie dane przesyłane do Apple do przeglądu, i nie potrzebujemy również **feedback ID**, ponieważ ponownie, nie jest to tutaj naprawdę przydatne – numery zwrotne Apple są świetne do tweeterów, aby spróbować zwrócić uwagę na zgłoszenie, ale nasze własne numery ID to po prostu unikalne wartości służące do utrzymania unikalności danych. Nadal jednak możemy dodać pozostałe dwie opcje – dodaj ten kod paska narzędzi do **IssueView**, poniżej modyfikatora `onReceive()`:
+
+```swift
+.toolbar {
+    Menu {
+        Button {
+            UIPasteboard.general.string = issue.title
+        } label: {
+            Label("Copy Issue Title", systemImage: "doc.on.doc")
+        }
+
+        Button {
+            issue.completed.toggle()
+            dataController.save()
+        } label: {
+            Label(issue.completed ? "Re-open Issue" : "Close Issue", systemImage: "bubble.left.and.exclamationmark.bubble.right")
+        }
+    } label: {
+        Label("Actions", systemImage: "ellipsis.circle")
+    }
+}
+```
+
+I to jest nasz drugi fragment kodu!
+
+
+
+### Zapisywanie na wszelki wypadek
+
+Mamy już kod, który zapisuje dane, gdy użytkownik zmienia jakąkolwiek część zgłoszenia, gdy dokonuje prostych zmian, takich jak ukończenie zgłoszenia lub zmiana nazwy tagu, a także gdy aplikacja przechodzi w tło.
+
+Wielu uznałoby, że to wystarczy, i szczerze mówiąc, prawdopodobnie tak jest, ale nie lubię polegać na „prawdopodobnie” w przypadku danych użytkownika, więc chcę wprowadzić jeszcze jeden punkt zapisu: zaraz po tym, jak użytkownik zatwierdzi edycję jednego z pól tekstowych zgłoszenia, zapisujemy dane natychmiast. To kolejny jednoliniowy dodatek w **IssueView**, więc dodaj go obok modyfikatora `onReceive()`:
+
+```swift
+.onSubmit(dataController.save)
+```
+
+To oznacza, że zapisujemy dane zgłoszenia w dwóch miejscach: modyfikator `onReceive()` automatycznie ustawia kolejkę zapisu, a modyfikator `onSubmit()` natychmiast uruchamia zapis, więc mamy pewną redundancję. W praktyce generuje to tylko odrobinę dodatkowej pracy dzięki naszemu sprawdzeniu `container.viewContext.hasChanges` wewnątrz metody `save()`, ale równie dobrze możemy całkowicie usunąć tę dodatkową pracę, anulując zadanie zapisu, gdy jesteśmy już wewnątrz metody `save()` – dodaj to na początku metody `save()` w **DataController**:
+
+```swift
+saveTask?.cancel()
+```
+
+### Jeszcze jeden przycisk…
+
+Następnie chcę dodać jeszcze jeden przycisk do aplikacji, wewnątrz **SidebarView**. Już mamy menu kontekstowe do zmiany nazwy tagów, ale usuwanie tagów jest możliwe tylko za pomocą gestu przesunięcia. Aby uprościć to dla użytkowników, możemy dodać opcję usuwania również do menu kontekstowego, co wymaga dwóch fragmentów kodu.
+
+Najpierw potrzebujemy nowej przeciążonej metody `delete()` w **SidebarView**, która przyjmuje filtr do usunięcia. Ważne jest, abyśmy nie pozwalali użytkownikowi usuwać filtrów bez przypisanego tagu, ponieważ są to wbudowane inteligentne filtry zdefiniowane przez nas, a nie te, które użytkownicy sami utworzyli.
+
+Dodaj teraz tę nową metodę do **SidebarView**:
+
+```swift
+func delete(_ filter: Filter) {
+    guard let tag = filter.tag else { return }
+    dataController.delete(tag)
+    dataController.save()
+}
+```
+
+Teraz możemy dodać drugi przycisk do modyfikatora **contextMenu()** przypisanego do każdego wiersza w **SidebarView**. Sugeruję umieszczenie go po przycisku zmiany nazwy:
+
+```swift
+Button(role: .destructive) {
+    delete(filter)
+} label: {
+    Label("Delete", systemImage: "trash")
+}
+```
+
+To daje użytkownikom dodatkową opcję w menu kontekstowym, bez dodawania bałaganu do naszego głównego interfejsu.
+
+### Błaha rzecz na zakończenie
+
+Nasza ostatnia zmiana jest bardzo mała: musimy dodać tytuł nawigacji do **SidebarView**, aby na górze obszaru nawigacji znajdowało się coś znaczącego.
+
+To tak proste, jak dodanie tego modyfikatora do listy, obok modyfikatora **alert()**, który dodaliśmy wcześniej:
+
+```swift
+.navigationTitle("Filters")
+```
+
+To nasza ostatnia zmiana, więc aplikacja jest gotowa! A przynajmniej nasz pierwszy szkic jest gotowy – to działająca aplikacja, ale nadal jest sporo do zrobienia, aby stała się Ostateczną Aplikacją Portfolio...
