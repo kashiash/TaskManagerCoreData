@@ -1,0 +1,92 @@
+/* 
+  Localizable.strings
+  TaskManagerCD
+
+  Created by Jacek Kosinski U on 21/08/2024.
+  
+*/
+/* OGÓLNE NAPISY */
+"OK" = "OK";
+"Cancel" = "Anuluj";
+"Delete" = "Usuń";
+"Rename" = "Zmień nazwę";
+"Actions" = "Akcje";
+
+
+/* WIDOK PASKA BOCZNEGO */
+"Filters" = "Filtry";
+"Smart Filters" = "Inteligentne filtry";
+"All Issues" = "Wszystkie zgłoszenia";
+"Recent Issues" = "Najnowsze zgłoszenia";
+"Tags" = "Tagi";
+"Add tag" = "Dodaj tag";
+"Show awards" = "Pokaż nagrody";
+
+"Rename tag" = "Zmień nazwę tagu";
+"New name" = "Nowa nazwa";
+
+
+/* WIDOK TREŚCI */
+"Issues" = "Zgłoszenia";
+
+/* Przycisk, który pokazuje menu z następującymi opcjami */
+"Filter" = "Filtr";
+"Turn Filter On" = "Włącz filtr"; /* Włącza filtrowanie */
+"Turn Filter Off" = "Wyłącz filtr"; /* Wyłącza filtrowanie */
+"Sort By" = "Sortuj według"; /* Dostosowuje kolejność wyświetlania zgłoszeń */
+"Date Created" = "Data utworzenia"; /* Sortuje zgłoszenia według daty ich utworzenia */
+"Date Modified" = "Data modyfikacji"; /* Sortuje zgłoszenia według daty ostatniej zmiany */
+"Newest to Oldest" = "Od najnowszych do najstarszych"; /* Umieszcza nowsze zgłoszenia przed starszymi */
+"Oldest to Newest" = "Od najstarszych do najnowszych"; /* Umieszcza starsze zgłoszenia przed nowszymi */
+
+"All" = "Wszystkie";
+"Open" = "Otwarte";
+"Closed" = "Zamknięte";
+
+"Low" = "Niski";
+"Medium" = "Średni";
+"High" = "Wysoki";
+
+/* Utwórz nowe zgłoszenie */
+"New Issue" = "Nowe zgłoszenie";
+
+/* Miejsce na tekst pomocniczy, który pomaga użytkownikom wyszukiwać */
+"Filter issues, or type # to add tags" = "Filtruj zgłoszenia lub wpisz #, aby dodać tagi";
+
+/* Wyświetlane jako status dla zamkniętych zgłoszeń */
+"CLOSED" = "ZAMKNIĘTE";
+
+
+/* WIDOK SZCZEGÓŁÓW */
+"Details" = "Szczegóły";
+
+/* WIDOK BRAKU ZGŁOSZENIA */
+"No Issue Selected" = "Nie wybrano zgłoszenia";
+
+/* WIDOK ZGŁOSZENIA */
+"Copy Issue Title" = "Skopiuj tytuł zgłoszenia";
+"Close Issue" = "Zamknij zgłoszenie";
+"Re-open Issue" = "Otwórz ponownie zgłoszenie";
+
+/* Pola, które pozwalają użytkownikom wprowadzać szczegóły dotyczące konkretnego zgłoszenia */
+"Enter the issue title here" = "Wprowadź tytuł zgłoszenia tutaj";
+"**Modified:** %@" = "**Zmodyfikowano:** %@";
+"**Status:** %@" = "**Status:** %@";
+"Priority" = "Priorytet";
+"Add Tags" = "Dodaj tagi";
+"Basic Information" = "Podstawowe informacje";
+"Enter the issue description here" = "Wprowadź opis zgłoszenia tutaj";
+
+
+/* WIDOK NAGRÓD */
+"Awards" = "Nagrody";
+
+
+/* DANE */
+"New tag" = "Nowy tag";
+"New issue" = "Nowe zgłoszenie";
+
+
+/* TYLKO DEBUGOWANIE */
+"ADD SAMPLES" = "DODAJ PRZYKŁADY";
+

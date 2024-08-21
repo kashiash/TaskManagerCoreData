@@ -3275,3 +3275,380 @@ Opcjonalnie możesz także dołączyć komentarze w tym pliku, używając `//` l
    - Jeśli otworzysz **Localizable.strings**, znajdziesz tam różne ciągi znaków, przy czym klucz i wartość są zawsze takie same, ponieważ oczywiście narzędzie to nie może dla nas tłumaczyć tekstu. Zauważ także, że przed każdym ciągiem znajduje się komentarz, który jest twoją szansą na opisanie, jak klucz jest używany, aby pomóc tłumaczom w dokonaniu dobrej translacji.
 
 Najważniejsze jest to, że nasz kod Swift pozostaje niezmieniony: nadal mamy „Filters”, „Issues” i tak dalej w naszym kodzie Swift, jako klucze lokalizowanych ciągów naszej aplikacji.
+
+
+
+### Czyszczenie
+
+Używanie narzędzia **genstrings** to mądry sposób na rozpoczęcie procesu internacjonalizacji, ale jest wiele ciągów znaków, które nie zostały przez nie wychwycone, i musimy je poprawić, zanim zlokalizujemy aplikację na język węgierski.
+
+Na początek: istnieje sporo ciągów znaków, które **genstrings** całkowicie pominął z różnych powodów. Proces ten może być trochę nieprzewidywalny, a jeśli śledzisz te instrukcje znacznie później, możesz zauważyć, że twoje wyniki są bardzo różne od moich. Jednak dla mnie narzędzie pominęło 26 różnych ciągów znaków w naszym projekcie, więc zaczniemy od dodania ich do pliku **Localizable.strings** – sugeruję, abyś po prostu skopiował i wkleił poniższy tekst na końcu pliku:
+
+```plaintext
+"Filters" = "Filters";
+"Smart Filters" = "Smart Filters";
+"Tags" = "Tags";
+"Issues" = "Issues";
+"Turn Filter On" = "Turn Filter On";
+"Turn Filter Off" = "Turn Filter Off";
+"Sort By" = "Sort By";
+"Rename tag" = "Rename tag";
+"Details" = "Details";
+"New Issue" = "New Issue";
+"Filter issues, or type # to add tags" = "Filter issues, or type # to add tags";
+"Filter" = "Filter";
+"Add tag" = "Add tag";
+"Show awards" = "Show awards";
+"Awards" = "Awards";
+"Priority" = "Priority";
+"Actions" = "Actions";
+"Copy Issue Title" = "Copy Issue Title";
+"Close Issue" = "Close Issue";
+"Add Tags" = "Add Tags";
+"Re-open Issue" = "Re-open Issue";
+"Rename" = "Rename";
+"Delete" = "Delete";
+"OK" = "OK";
+"Cancel" = "Cancel";
+"New name" = "New name";
+```
+
+Po dodaniu tych wpisów, powinieneś zobaczyć tylko dwa pozostałe ostrzeżenia lokalizacyjne w Xcode. Wskazówka: wpisz „localizable” w polu filtrowania konsoli Xcode, aby ukryć wszystkie wiadomości związane z iCloud.
+
+### Rozwiązywanie ostrzeżeń
+
+Pozostałe dwa ostrzeżenia dotyczą ciągów znaków „New issue” i „ADD SAMPLES”. Pierwsze z nich wynika z rozróżnienia wielkości liter w naszych ciągach: właśnie dodaliśmy ciąg dla „New Issue”, ale nie dla „New issue” – w drugim przypadku mamy małe „i”.
+
+Możesz zdecydować, że to rozróżnienie jest istotne, w takim przypadku musiałbyś dodać kolejną linię, taką jak ta:
+
+```plaintext
+"New issue" = "New issue";
+```
+
+Jednak ja uważam, że rozróżnienie nie ma znaczenia, przynajmniej tutaj – wolałbym przełączyć się na „New Issue” we wszystkich miejscach i uniknąć dodatkowego ciągu. Ten tekst znajduje się w **ContentView.swift**, w ostatnim przycisku naszego paska narzędzi. Zmień go na:
+
+```swift
+Button(action: dataController.newIssue) {
+    Label("New Issue", systemImage: "square.and.pencil")
+}
+```
+
+**Uwaga:** Używamy również „New issue” z małą literą "i" jako domyślnego tytułu dla nowo utworzonych zgłoszeń – więcej na ten temat później!
+
+Drugie ostrzeżenie dotyczy „ADD SAMPLES”, którego możesz nawet nie zobaczyć, jeśli usunąłeś ten przycisk. Tutaj mamy kolejną opcję: możesz całkowicie je zignorować, ponieważ ten przycisk nie jest faktycznie używany, lub możesz dodać lokalizację, aby pozbyć się ostrzeżenia.
+
+Nie wiem jak Ty, ale wolałbym uniknąć ostrzeżenia, tym bardziej że w przyszłości może ono przesłonić rzeczywiste ostrzeżenia lokalizacyjne. Dodajmy więc dla niego placeholder:
+
+```plaintext
+"ADD SAMPLES" = "ADD SAMPLES";
+```
+
+### Testowanie internacjonalizacji
+
+To kończy naszą podstawową internacjonalizację, ale chcę pokazać ci jeszcze jedną przydatną funkcję Xcode, ponieważ to naprawdę świetne narzędzie: wróć do menu **Product**, przytrzymaj klawisz **Option**, a następnie wybierz ponownie **Run**. Tym razem zmień **App Language** z **System Language** na **Double-Length Pseudolanguage** – jest to opcja na samym dole długiej listy, blisko końca.
+
+Teraz uruchom aplikację ponownie i zobacz, co myślisz. Powinieneś zobaczyć, że większość ciągów znaków w naszej aplikacji jest teraz zapisana dwukrotnie: na przykład tytuł **Filters** to teraz **Filters Filters**. Ta opcja została zaprojektowana, aby testować układy poprzez tworzenie sztucznie długich ciągów znaków, z zamysłem, że jeśli twój interfejs użytkownika działa poprawnie, gdy wszystko jest dwa razy dłuższe, powinien działać z dowolnymi danymi.
+
+To sprawia, że nasza aplikacja jest dość dobrze zinternacjonalizowana: każdy ciąg, który powinien być lokalizowany, może być teraz lokalizowany. Czy jest to idealne? Nie. W rzeczywistości istnieje jeden szczególny problem, który powinniśmy naprawić…
+
+
+
+### Obsługa liczby mnogiej
+
+W **SidebarView** użyliśmy automatycznej zgodności gramatycznej, aby liczba zgłoszeń dla tagu była odczytywana jako „issue” lub „issues” w zależności od tego, co było gramatycznie poprawne. Wspomniałem, że „jest to wystarczające na razie”, ale teraz pojawia się problem: jeśli włączysz **VoiceOver** i wybierzesz jeden z tagów, zobaczysz następujący błąd: `ERROR: ^[%lld issue](inflect: true) not found in table Localizable of bundle.`
+
+Część tego błędu pochodzi ze specjalnej składni Markdown, która wyzwala automatyczną zgodność gramatyczną, ale nowa jest część `%lld` – to format **Localizable.strings** dla liczby całkowitej, który jest zastępowany w naszej interpolacji ciągów znaków.
+
+Możesz dodać ten tekst bezpośrednio do pliku **Localizable.strings**, ale to nie jest rozwiązanie, które przetrwa długo, ponieważ automatyczna zgodność gramatyczna nie obsługuje węgierskiego!
+
+Dlatego potrzebujemy lepszego rozwiązania, i tutaj zaczyna się skomplikowana część. Język angielski jest dość nieregularny pod względem liczby mnogiej, używając formy mnogiej nawet wtedy, gdy mamy zero przedmiotów, ale istnieje wiele języków, które są znacznie bardziej skomplikowane. Na przykład arabski ma jedną formę dla zera obiektów, inną dla jednego, jeszcze inną dla dwóch, kolejną dla kilku obiektów, jeszcze jedną dla wielu obiektów, i jedną więcej dla wszystkich innych ilości.
+
+Można by próbować zakodować te zasady w Swift, ale byłoby to znacznie trudniejsze, niż się wydaje. Na przykład rosyjski również ma specjalne zasady dotyczące liczby mnogiej, gdy istnieje wiele obiektów, ale definicja „wielu” w rosyjskim nie jest taka sama jak „wielu” w arabskim!
+
+Na szczęście Apple wykonało większość ciężkiej pracy za nas, a wszystko, co musimy zrobić, to powiedzieć systemowi, jak odmieniać nasze słowa. Nie używa się do tego pliku **Localizable.strings**, ponieważ aby obsługiwać tego rodzaju skomplikowane dane, musimy być bardziej precyzyjni z naszymi zasadami. Zamiast tego używa się pliku typu **property list** o nazwie **Localizable.stringsdict**, który jest plikiem XML zawierającym ciągi znaków, które chcemy dopasować, i jak powinny być obsługiwane.
+
+### Krok 1: Zmiana `accessibilityHint` w SidebarView
+
+Najpierw zmień `accessibilityHint` w **SidebarView**, aby używało prostej interpolacji ciągów znaków, jak poniżej:
+
+```swift
+.accessibilityHint("\(filter.activeIssuesCount) issues")
+```
+
+Tak, to będzie teraz odczytywane niepoprawnie, ale zaraz to naprawimy.
+
+### Krok 2: Utworzenie pliku `Localizable.stringsdict`
+
+Następnie utwórz nowy plik, używając szablonu **StringsDict File** i nazwij go **Localizable.stringsdict**. To doda nowy plik do twojego projektu.
+
+### Krok 3: Edycja pliku `Localizable.stringsdict`
+
+Na koniec kliknij prawym przyciskiem myszy na **Localizable.stringsdict** i wybierz **Open As > Source Code**. To pokaże ci surowy, podstawowy kod XML za plikiem szablonu, który jest znacznie łatwiejszy do odczytania, zrozumienia i edycji.
+
+Zobaczysz tam sporo XML-a w nieco dziwnym formacie właściwości Apple – zobaczysz elementy `<key>`, które definiują nazwę klucza, a następnie typ wartości, taki jak `<string>` lub `<dict>`, który zawiera wartość dla poprzedzającego klucza. Oznacza to, że plik musi być czytany w kolejności. Jeśli uważasz to za trochę mylące, nie jesteś sam: **property lists** to w zasadzie XML-owe odpowiedniki JSON-a.
+
+Aby rozwiązać nasz problem z liczbą mnogą, musimy nieco zmodyfikować plik szablonu:
+
+1. **Zamień "StringKey" na "%lld issues":**
+   - Tam, gdzie jest napisane **StringKey**, zamień to na `"%lld issues"`, ponieważ teraz pozbyliśmy się automatycznej zgodności gramatycznej. To, co pozostaje, to liczba całkowita, po której następuje „issues”.
+
+2. **Usuń niepotrzebne linie:**
+   - Linia `<string>%#@VARIABLE@</string>` definiuje zmienną, ale nie potrzebujemy jej tutaj, więc możemy ją pominąć.
+   - Linia `<key>VARIABLE</key>` mówi iOS, jak obsługiwać zmienną zdefiniowaną powyżej. Ponownie, nie potrzebujemy jej tutaj, więc możemy ją pominąć.
+
+3. **Zaktualizuj typy kluczy i wartości:**
+   - Klucz `NSStringFormatSpecTypeKey` ma wartość `NSStringPluralRuleType`, co oznacza, że opisujemy tutaj zasady odmiany liczby mnogiej.
+   - Bezpośrednio poniżej linii `NSStringFormatValueTypeKey` zobaczysz pusty ciąg znaków. To tutaj mówimy Swift, jaki rodzaj wartości sprawdzamy pod kątem liczby mnogiej, co w naszym przypadku ponownie będzie „lld” – sprawdzamy długą liczbę całkowitą.
+
+4. **Zdefiniuj reguły liczby mnogiej:**
+   - Dla ciągu znaków poniżej `zero` napisz „No issues”.
+   - Dla ciągu znaków poniżej `one` napisz „1 issue”.
+   - Następnie możesz usunąć klucze i ciągi znaków dla `two`, `few`, i `many`, ponieważ język angielski nie ma specjalnych reguł dla tych przypadków.
+   - Wreszcie, dla ciągu znaków poniżej `other` napisz „%lld issues”, aby wstawić z powrotem naszą liczbę.
+
+I to wszystko – teraz możesz uruchomić program ponownie i zobaczyć poprawny tekst wyświetlany w każdym momencie.
+
+### Podsumowanie
+
+Pliki **stringsdict** mogą wydawać się niezwykle skomplikowane, a w prostych przypadkach, takich jak ten, mogą wydawać się trochę przesadzone. Jednak prawdziwa moc plików **stringsdict** tkwi w ich zdolności do obsługi wszelkiego rodzaju skomplikowanych formatów ciągów znaków, z wieloma liczbami pojawiającymi się w jednym ciągu – na szczęście nie potrzebujemy tego tutaj, ale warto mieć to narzędzie pod ręką na przyszłość.
+
+
+
+### Obsługa liczby mnogiej
+
+W **SidebarView** używaliśmy automatycznej zgodności gramatycznej, aby liczba zgłoszeń dla tagu była odczytywana jako „issue” lub „issues” w zależności od gramatycznej poprawności. Wspomniałem wcześniej, że „jest to wystarczające na razie,” ale teraz pojawia się problem: jeśli włączysz **VoiceOver** i wybierzesz jeden z tagów, zobaczysz błąd: `ERROR: ^[%lld issue](inflect: true) not found in table Localizable of bundle`.
+
+Rozpoznasz część tego błędu jako specjalną składnię Markdown, która wyzwala automatyczną zgodność gramatyczną, ale nowością jest `%lld` – to format **Localizable.strings** dla liczby całkowitej, który jest zastępowany w naszej interpolacji ciągów znaków.
+
+Możesz dodać ten tekst bezpośrednio do pliku **Localizable.strings**, ale to nie jest długotrwałe rozwiązanie, ponieważ automatyczna zgodność gramatyczna nie obsługuje węgierskiego!
+
+Dlatego potrzebujemy lepszego rozwiązania, i tutaj zaczyna się złożoność. Język angielski jest dość nieregularny pod względem liczby mnogiej, używając formy mnogiej nawet wtedy, gdy mamy zero przedmiotów, ale istnieje wiele języków, które są znacznie bardziej skomplikowane. Na przykład arabski ma jedną formę dla zera obiektów, inną dla jednego, jeszcze inną dla dwóch, kolejną dla kilku obiektów, jeszcze jedną dla wielu obiektów, i jedną więcej dla wszystkich innych ilości.
+
+Moglibyśmy próbować zakodować te zasady w Swift, ale byłoby to znacznie trudniejsze, niż się wydaje. Na przykład rosyjski również ma specjalne zasady dotyczące liczby mnogiej, gdy istnieje wiele obiektów, ale definicja „wielu” w rosyjskim nie jest taka sama jak „wielu” w arabskim!
+
+Na szczęście Apple wykonało większość ciężkiej pracy za nas, a wszystko, co musimy zrobić, to powiedzieć systemowi, jak odmieniać nasze słowa. Nie używa się do tego pliku **Localizable.strings**, ponieważ aby obsługiwać tego rodzaju skomplikowane dane, musimy być bardziej precyzyjni z naszymi zasadami. Zamiast tego używa się pliku typu **property list** o nazwie **Localizable.stringsdict**, który jest plikiem XML zawierającym ciągi znaków, które chcemy dopasować, i jak powinny być obsługiwane.
+
+### Krok 1: Zmiana `accessibilityHint` w SidebarView
+
+Najpierw zmień `accessibilityHint` w **SidebarView**, aby używało prostej interpolacji ciągów znaków, jak poniżej:
+
+```swift
+.accessibilityHint("\(filter.activeIssuesCount) issues")
+```
+
+Tak, to będzie teraz odczytywane niepoprawnie, ale zaraz to naprawimy.
+
+### Krok 2: Utworzenie pliku `Localizable.stringsdict`
+
+Następnie utwórz nowy plik, używając szablonu **StringsDict File** i nazwij go **Localizable.stringsdict**. To doda nowy plik do twojego projektu.
+
+### Krok 3: Edycja pliku `Localizable.stringsdict`
+
+Na koniec kliknij prawym przyciskiem myszy na **Localizable.stringsdict** i wybierz **Open As > Source Code**. To pokaże ci surowy, podstawowy kod XML za plikiem szablonu, który jest znacznie łatwiejszy do odczytania, zrozumienia i edycji.
+
+Zobaczysz tam sporo XML-a w nieco dziwnym formacie właściwości Apple – zobaczysz elementy `<key>`, które definiują nazwę klucza, a następnie typ wartości, taki jak `<string>` lub `<dict>`, który zawiera wartość dla poprzedzającego klucza. Oznacza to, że plik musi być czytany w kolejności. Jeśli uważasz to za trochę mylące, nie jesteś sam: **property lists** to w zasadzie XML-owe odpowiedniki JSON-a.
+
+Aby rozwiązać nasz problem z liczbą mnogą, musimy nieco zmodyfikować plik szablonu:
+
+1. **Zamień "StringKey" na "%lld issues":**
+   - Tam, gdzie jest napisane **StringKey**, zamień to na `"%lld issues"`, ponieważ teraz pozbyliśmy się automatycznej zgodności gramatycznej. To, co pozostaje, to liczba całkowita, po której następuje „issues”.
+
+2. **Usuń niepotrzebne linie:**
+   - Linia `<string>%#@VARIABLE@</string>` definiuje zmienną, ale nie potrzebujemy jej tutaj, więc możemy ją pominąć.
+   - Linia `<key>VARIABLE</key>` mówi iOS, jak obsługiwać zmienną zdefiniowaną powyżej. Ponownie, nie potrzebujemy jej tutaj, więc możemy ją pominąć.
+
+3. **Zaktualizuj typy kluczy i wartości:**
+   - Klucz `NSStringFormatSpecTypeKey` ma wartość `NSStringPluralRuleType`, co oznacza, że opisujemy tutaj zasady odmiany liczby mnogiej.
+   - Bezpośrednio poniżej linii `NSStringFormatValueTypeKey` zobaczysz pusty ciąg znaków. To tutaj mówimy Swift, jaki rodzaj wartości sprawdzamy pod kątem liczby mnogiej, co w naszym przypadku ponownie będzie „lld” – sprawdzamy długą liczbę całkowitą.
+
+4. **Zdefiniuj reguły liczby mnogiej:**
+   - Dla ciągu znaków poniżej `zero` napisz „No issues”.
+   - Dla ciągu znaków poniżej `one` napisz „1 issue”.
+   - Następnie możesz usunąć klucze i ciągi znaków dla `two`, `few`, i `many`, ponieważ język angielski nie ma specjalnych reguł dla tych przypadków.
+   - Wreszcie, dla ciągu znaków poniżej `other` napisz „%lld issues”, aby wstawić z powrotem naszą liczbę.
+
+I to wszystko – teraz możesz uruchomić program ponownie i zobaczyć poprawny tekst wyświetlany w każdym momencie.
+
+### Podsumowanie
+
+Pliki **stringsdict** mogą wydawać się niezwykle skomplikowane, a w prostych przypadkach, takich jak ten, mogą wydawać się trochę przesadzone. Jednak prawdziwa moc plików **stringsdict** tkwi w ich zdolności do obsługi wszelkiego rodzaju skomplikowanych formatów ciągów znaków, z wieloma liczbami pojawiającymi się w jednym ciągu – na szczęście nie potrzebujemy tego tutaj, ale warto mieć to narzędzie pod ręką na przyszłość.
+
+---
+
+### Lokalizacja danych edytowanych przez użytkownika
+
+Istnieją dwa ważne ciągi znaków, które nie zostały jeszcze zinternacjonalizowane, i możesz ich nawet nie zauważyć, ponieważ znajdują się gdzieś pomiędzy naszymi danymi a danymi użytkownika. Ciągi te to „New tag” i „New issue”, które pochodzą od nas, gdy użytkownik tworzy nowe obiekty, ale potem oczywiście stają się własnością użytkownika, gdy zmieniają je na cokolwiek, nad czym faktycznie pracują.
+
+To nie jest coś, co możemy naprawić za pomocą **LocalizedStringKey**, ponieważ nazwa użytkownika nie jest przeznaczona do lokalizacji – mogą nazwać to cokolwiek chcą, w dowolnym języku. W rezultacie musimy zejść poziom niżej poniżej **SwiftUI**, aby uzyskać dostęp do podstawowego systemu lokalizacji: **NSLocalizedString()**.
+
+Oto jak wygląda nasza obecna metoda **newTag()** w **DataController.swift**:
+
+```swift
+func newTag() {
+    let tag = Tag(context: container.viewContext)
+    tag.id = UUID()
+    tag.name = "New tag"
+    save()
+}
+```
+
+Musimy użyć lepszej domyślnej nazwy – powinna ona dostosowywać się do lokalizacji, które dodamy w przyszłości. Tutaj wchodzi **NSLocalizedString()**: podaj nazwę klucza jako pierwszy parametr i komentarz dla tłumaczy jako drugi, a system zinternacjonalizuje ciąg znaków za pomocą **Localizable.strings** i **Localizable.stringsdict**, tak jak **SwiftUI**.
+
+Zastąp więc obecny kod dla nazwy tą wersją:
+
+```swift
+tag.name = NSLocalizedString("New tag", comment: "Create a new tag")
+```
+
+Parametr `comment` nie jest faktycznie widoczny w naszym interfejsie użytkownika; jest tam tylko po to, aby zapewnić pewien kontekst dla tłumaczy, używając tych samych komentarzy w **Localizable.strings**, które widziałeś wcześniej.
+
+Możemy również wprowadzić tę samą zmianę dla nazw nowych zgłoszeń:
+
+```swift
+issue.title = NSLocalizedString("New issue", comment: "Create a new issue")
+```
+
+Pozostawiłem to z małą literą „i”, ponieważ uważam, że jest to bardziej naturalne – nie wyobrażam sobie, aby użytkownicy kapitalizowali każdą literę w zgłoszeniu.
+
+Teraz musimy dodać „New tag” i „New issue” (z małą literą „i”) do **Localizable.strings**. Dodaj te dwa teraz:
+
+```plaintext
+"New tag" = "New tag";
+"New issue" = "New issue";
+```
+
+To zapewnia nam domyślną nazwę dla tagów i zgłoszeń, którą można lokalizować, ale oczywiście użytkownicy mogą edytować je do dowolnej postaci później.
+
+
+
+### Inteligentne filtry
+
+Ostatnią rzeczą, którą musimy zinternacjonalizować, są dwa ciągi znaków, które należą wyłącznie do nas (tj. nie są edytowalne przez użytkownika), ale nie są oznaczone przez Xcode jako błędy: to „All Issues” i „Recent Issues” inteligentne filtry. Dokładniej rzecz biorąc, jest to „Recent issues” z małą literą "i", ponieważ ponownie mamy tutaj niespójność: czy powinniśmy używać wielkiej, czy małej litery "i"?
+
+Odpowiedź zależy od Ciebie – spróbuj obu opcji i zobacz, która Ci odpowiada bardziej. Chociaż rozumiem, że można by argumentować, że należy to dopasować do tego, co mamy w tagach edytowanych przez użytkownika, czyli używając małej litery "i", styl Apple w Feedback Assistant polega na kapitalizowaniu każdego słowa, więc równie dobrze możesz zdecydować się na tę wersję. Osobiście wybieram styl Feedback Assistant, ale to Twój projekt, więc zrób, jak uważasz.
+
+Gdy już zdecydujesz i zmienisz odpowiednią właściwość statyczną w **Filter.swift**, dodaj nowe ciągi znaków do swojego pliku **Localizable.strings**, jak poniżej:
+
+```plaintext
+"All Issues" = "All Issues";
+"Recent Issues" = "Recent Issues";
+```
+
+Teraz możemy zmusić te ciągi znaków do bycia lokalizowanymi, używając jawnie inicjalizatora **LocalizedStringKey** dla naszych etykiet inteligentnych filtrów w **SidebarView**, tak jak poniżej:
+
+```swift
+NavigationLink(value: filter) {
+    Label(LocalizedStringKey(filter.name), systemImage: filter.icon)
+}
+```
+
+I to naprawdę oznacza, że nasz program jest zinternacjonalizowany – nareszcie!
+
+### Co dalej?
+
+Na tym etapie nasza aplikacja jest w pełni zinternacjonalizowana: wszystkie wartości, które powinny być tłumaczone, zostały usunięte z kodu i umieszczone w osobnych plikach z ciągami znaków poza naszym kodem. To samo w sobie jest dużym osiągnięciem, niezależnie od tego, co zrobisz dalej, ponieważ ostatecznie ciągi znaków są danymi, a nie kodem, i powinny być tak traktowane.
+
+Ale jeśli poważnie myślisz o udowodnieniu swoich umiejętności, to jest to dopiero pierwszy krok – powinieneś również spróbować zlokalizować swoją aplikację na co najmniej jeden inny język. To pokazuje nie tylko znajomość narzędzi Apple, ale także chęć tworzenia aplikacji, które pomagają wszystkim.
+
+Nasz kolejny krok to lokalizacja aplikacji na inny język, który w naszym przypadku będzie to węgierski. Jeśli mówisz w innym języku, oczywiście możesz użyć tego języka – kroki są dokładnie takie same.
+
+Ale zanim do tego dojdziemy, jest jeszcze jeden przedostatni krok, który naprawdę polecam: zorganizowanie pliku **Localizable.strings**. Został on stworzony częściowo przez **genstrings**, ale głównie przez nas ręcznie wprowadzając wartości, i ma trzy problemy:
+
+1. Ciągi znaków wygenerowane przez **genstrings** pojawiają się w porządku alfabetycznym, co prawie na pewno nie ma sensu.
+2. Jest tam mnóstwo komentarzy „No comment provided by engineer” (Brak komentarza dostarczonego przez inżyniera), co nie jest pomocne.
+3. Wszystkie nasze dodatkowe wartości są zebrane na końcu pliku.
+
+Proces lokalizacji zaczyna się od skopiowania naszego istniejącego pliku **Localizable.strings**, co oznacza, że dobrze jest najpierw uporządkować ten plik.
+
+### Jak zorganizować plik `Localizable.strings`?
+
+Spędź kilka minut, robiąc trzy rzeczy:
+
+1. Usuń wszystkie komentarze „No comment provided by engineer”.
+2. Przegrupuj linie, aby ciągi znaków były sensownie pogrupowane.
+3. Dodaj komentarze nad tymi grupami, opisujące, gdzie są używane.
+
+Oczywiście część 2 jest trudniejsza, jeśli nie robiłeś tego wcześniej, ale mogę Cię przeprowadzić przez mój proces myślowy:
+
+- Zacznę od umieszczenia ogólnego tekstu na górze, czyli tekstu, który jest używany w wielu miejscach. Aktualnie mamy tylko „OK”, „Cancel”, „Delete”, „Rename” i „Actions”, ale z czasem pojawi się ich więcej.
+- Następnie utworzyłbym grupy ciągów znaków na podstawie ekranu: **SidebarView**, **ContentView**, **DetailView**, **IssueView**, **NoIssueView**, a potem **AwardsView**.
+- W obrębie ekranów uporządkuj rzeczy według pionowej kolejności na ekranie, od góry do dołu, z grupami elementów menu itp.
+- Grupuj ciągi znaków związane z danymi, tj. „New tag” i „New issue”, po ekranach.
+- Zostaw „ADD SAMPLES” na końcu, wyraźnie oznaczone jako przeznaczone tylko do debugowania.
+
+Tak więc dla **SidebarView** oznaczałoby to następującą grupę:
+
+```plaintext
+/* SIDEBARVIEW */
+"Filters" = "Filters";
+"Smart Filters" = "Smart Filters";
+"All Issues" = "All Issues";
+"Recent Issues" = "Recent Issues";
+"Tags" = "Tags";
+"Add tag" = "Add tag";
+"Show awards" = "Show awards";
+```
+
+Po zakończeniu możesz dodać komentarze: powiedz tłumaczom, gdzie te ciągi znaków są używane. Tutaj nasza grupacja staje się naprawdę przydatna, ponieważ rzeczy takie jak opcje filtrowania w **ContentView** są już pogrupowane, więc możesz dodać komentarz powyżej, aby wyjaśnić, co one wszystkie oznaczają naraz, jak poniżej:
+
+```plaintext
+/* Przycisk, który pokazuje menu z następującymi opcjami */
+"Filter" = "Filter";
+"Turn Filter On" = "Turn Filter On"; /* Włącza filtrowanie */
+"Turn Filter Off" = "Turn Filter Off"; /* Wyłącza filtrowanie */
+"Sort By" = "Sort By"; /* Dostosowuje kolejność wyświetlania zgłoszeń */
+"Date Created" = "Date Created"; /* Sortuje zgłoszenia według daty ich utworzenia */
+"Date Modified" = "Date Modified"; /* Sortuje zgłoszenia według daty ostatniej zmiany */
+"Newest to Oldest" = "Newest to Oldest"; /* Umieszcza nowsze zgłoszenia przed starszymi */
+"Oldest to Newest" = "Oldest to Newest"; /* Umieszcza starsze zgłoszenia przed nowszymi */
+```
+
+Po zakończeniu ostatnim krokiem jest dodanie odstępów – dosłownie pustych linii w pliku **Localizable.strings**, aby pomóc wizualnie podzielić różne sekcje. Dodam trzy przerwy między każdą główną grupą, jak ekrany, a jedną przerwę między każdą mniejszą grupą, jak nasza mała grupa menu filtrowania powyżej. Ten plik z ciągami znaków będzie czytany przez ludzi przez cały czas, więc spraw, aby był czytelny – dodaj przerwy w linii, umieść komentarze, napisz rzeczy WIELKIMI LITERAMI, aby zrobić nagłówki, i więcej. Możesz nawet użyć sztuki ASCII, jeśli to pomoże!
+
+Zamieściłem mój plik **Localizable.strings** w pobraniu dla tego artykułu, abyś mógł zobaczyć, gdzie skończyłem, ale nie czuj się ograniczony tym – zorganizuj plik tak, jak uważasz za stosowne!
+
+### A teraz: lokalizacja
+
+Po całej tej pracy ta ostatnia część jest zaskakująco łatwa. Cóż, jest dla mnie, ponieważ mam natywnego użytkownika innego języka, który zgłosił się na ochotnika do pomocy – możesz albo użyć moich zlokalizowanych ciągów znaków, przetłumaczyć je samodzielnie, jeśli masz takie umiejętności, albo nawet rozważyć skorzystanie z profesjonalnego tłumacza, jeśli naprawdę chcesz się postarać.
+
+Wskazówka: możesz być skłonny użyć ChatGPT, ale warto, aby ktoś prawdziwy sprawdził twoje tłumaczenia przed wysyłką!
+
+Niezależnie od tego, którą metodę wybierzesz, proces jest taki sam: przejdź do ustawień swojego projektu, wybierz zakładkę **Info**, i poszukaj sekcji **Localization**. Prawdopodobnie zobaczysz tam już „Base” i „English” oraz 0 zlokalizowanych plików. Tak, wiem, że już stworzyliśmy **Localizable.strings**, ale to się jeszcze nie liczy – nie przypisaliśmy go jeszcze do konkretnego języka.
+
+Kliknij mały przycisk **+** pod listą lokalizacji, a następnie wybierz język, który chcesz zlokalizować. Jak wspomniałem, będę używał węgierskiego, ale możesz wybrać inny język, jeśli wolisz.
+
+Gdy to zrobisz, węgierski pojawi się na liście lokalizacji, ponownie z informacją, że jest 0 zlokalizowanych plików.
+
+Następnie wybierz **Localizable.strings**, a następnie otwórz inspektora plików – jeśli nie jest już widoczny, możesz go otworzyć z menu **View** pod **Inspectors > File**. Powinieneś zobaczyć tam kolejną sekcję **Localization**, w tym duży, pomocny przycisk o nazwie **Localize**, który chciałbym, abyś teraz nacisnął.
+
+Po naciśnięciu przycisku Xcode potwierdzi, że chcesz przenieść istniejący plik **Localizable.strings** do angielskiego, więc proszę potwierdź, naciskając **Localize** w alercie. Zobaczysz, że inspektor plików zmieni się trochę, ponieważ pod **Localization** znajdziesz zarówno angielski, jak i węgierski. Chciałbym, abyś zaznaczył węgierski, a gdy to zrobisz, trzy rzeczy się wydarzą:
+
+1. Xcode zrobi kopię istniejącego pliku **Localizable.strings** i użyje tego jako punktu wyjścia dla węgierskiego.
+2. Obok **Localizable.strings** w nawigatorze projektu pojawi się strzałka rozwijania, a jeśli ją otworzysz, zobaczysz plik wymieniony jako istniejący zarówno w angielskim, jak i węgierskim.
+3. Xcode otworzy nową wersję węgierską **Localizable.strings** w swoim edytorze.
+
+Mylące, przynajmniej na początku, jest to, że jeden plik wydaje się być podzielony na dwa. W rzeczywistości Xcode cicho utworzył dla nas dwa nowe katalogi, po jednym dla każdego kodu języka: **en.lproj** i **hu.lproj**. Gdy dodajesz pliki do każdego języka, są one kopiowane do tych katalogów, ale Xcode utrzymuje je w ich oryginalnym miejscu w nawigatorze projektu, abyś mógł nadal organizować je, jak chcesz.
+
+W tym momencie Twoim zadaniem jest przetłumaczenie wszystkich wartości w pliku **Localizable.strings** na węgierski. Oczywiście nie zmuszę cię do robienia tego samodzielnie, więc zamiast tego powinieneś skopiować plik **Localizable.strings** z mojego pobrania do katalogu **hu.lproj**, aby użyć tych, które przygotowałem wcześniej.
+
+To naprawia **Localizable.strings**, więc teraz chcę, abyś powtórzył to dla **Localizable.stringsdict**: wybierz go, naciśnij **Localize** w inspektorze plików, skopiuj z angielskiego, a następnie zaznacz węgierski w inspektorze plików. Będziesz musiał otworzyć wskaźnik rozwijania obok **Localizable.stringsdict**, kliknąć prawym przyciskiem myszy na nową węgierską wersję, a następnie wybrać **Open As > Source Code**.
+
+Musimy wprowadzić dwie zmiany w tym pliku, aby stał się węgierski:
+
+1. Zastąp wartość dla zera na „Nincs probléma”.
+2. Zastąp wartość dla jednego na „1 probléma”.
+3. Zastąp wartość dla innych na „%lld problémák”.
+
+I teraz nasza aplikacja jest w większości zlokalizowana na węgierski! Możesz nawet to wypróbować, jeśli chcesz – przejdź do menu **Product**, przytrzymaj **Option**, a następnie kliknij **Run**. Teraz zmień język aplikacji na węgierski i kliknij **Run**. To uruchomi aplikację, jakby użytkownik specjalnie zażądał języka węgierskiego, i powinieneś zobaczyć wszystkie nasze aktywne ciągi znaków.
+
+Tak jak w przypadku angielskiego, dostarczyłem własną kopię pliku **Localizable.stringsdict**, jeśli wolisz jej użyć.
+
+### A co z nagrodami?
+
+Jest jeszcze jedna rzecz, którą musimy zmienić, zanim ta aplikacja będzie w pełni gotowa dla węgierskiej publiczności, czyli zlokalizować nagrody.
+
+To nic specjalnego i w rzeczywistości podąża za dokładnie tymi samymi krokami, które już używaliśmy, ale uważam, że ważne jest, aby to pokazać, ponieważ pokazuje, że każdy rodzaj zasobu może być zlokalizowany, nie tylko pliki z ciągami znaków.
+
+Wybierz **Awards.json**, kliknij **Localize** i przenieś go do angielskiego. Teraz zaznacz pole węgierskie i przystąp do tłumaczenia węgierskich ciągów znaków – albo po prostu skopiuj mój plik **Awards.json** z pobrania dla tego artykułu.
+
+W tym momencie skończyliśmy! Nauczyłeś się, jak zinternacjonalizować aplikację, w tym jak radzić sobie z liczbą mnogą, i jak zlokalizować ją na określony język. Pamiętaj, że precyzyjny język, który wybierzesz, nie ma tak naprawdę znaczenia w przypadku aplikacji do portfolio, ponieważ większość czasu chodzi o wykazanie technik i zrozumienia.
