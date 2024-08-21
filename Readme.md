@@ -2971,3 +2971,307 @@ To tak proste, jak dodanie tego modyfikatora do listy, obok modyfikatora **alert
 ```
 
 To nasza ostatnia zmiana, więc aplikacja jest gotowa! A przynajmniej nasz pierwszy szkic jest gotowy – to działająca aplikacja, ale nadal jest sporo do zrobienia, aby stała się Ostateczną Aplikacją Portfolio...
+
+## 16. Teraz prawdziwa praca...
+
+AKTUALIZACJA: Wszystko, co zrobiliśmy do tej pory, stworzyło przydatną aplikację, chociaż w przyszłości dodamy o wiele więcej funkcjonalności i obsługi międzyplatformowej. Ale zanim się do nich zbliżymy, chcę zmienić bieg i skupić się na ulepszaniu naszego istniejącego kodu. Tu zaczyna się prawdziwa praca!
+
+
+
+### Szybkie linki
+- **Co mamy teraz**
+- **Nowy plan**
+
+### Co mamy teraz
+
+W tym momencie nasza aplikacja pozwala na dodawanie tagów i zgłoszeń, swobodne ich edytowanie, a następnie filtrowanie i sortowanie zgłoszeń na różne sposoby. Możemy również zdobywać nagrody za wykonywanie różnych działań w aplikacji, co daje użytkownikom dodatkową motywację do powrotu.
+
+Jednak nasz kod ma wiele problemów. Na przykład:
+
+- Działa tylko w języku angielskim, a próba dostosowania go do innych języków nie byłaby łatwa.
+- Ma słabą dostępność, co oznacza, że osoby polegające na VoiceOver lub innych funkcjach dostępności będą miały trudności z korzystaniem z naszej aplikacji.
+- Nie ma żadnych testów, więc nie możemy zweryfikować, czy nasz kod faktycznie działa zgodnie z zamierzeniami, bez ręcznego przeglądania go.
+- Kod jest dość nieuporządkowany w niektórych miejscach i trudno go ponownie użyć lub utrzymać.
+- Styl kodu jest niespójny i w niektórych miejscach mylący.
+- Sam projekt jest nieuporządkowany, chaotyczny i nieudokumentowany.
+
+To wszystko brzmi dość źle, ale dobrą wiadomością jest to, że jest to również zamierzone. Tak, celowo pisałem niedoskonały kod przez cały ten czas. Widzisz, chociaż chcę pokazać ci, jak go naprawić i ulepszyć, chcę także zapewnić ci warunki bliskie rzeczywistości – mogłem napisać samouczek na temat testowania aplikacji, na przykład, ale nie pokazałby ci, jak wziąć istniejącą aplikację i uczynić ją testowalną.
+
+### Nowy plan
+
+Teraz, gdy mamy podstawową działającą aplikację, przestaniemy dodawać nowe funkcje i zamiast tego skupimy się na doprowadzeniu tego kodu do najlepszego możliwego stanu. Pamiętaj, dla zdecydowanej większości programistów świetna aplikacja w portfolio to nie ta, która ma błyszczące animacje lub sprytny interfejs użytkownika, ale taka, która pokazuje, że masz solidne zrozumienie podstaw iOS: że potrafisz zorganizować projekt, że potrafisz pisać testy, że przemyślałeś swoją architekturę i wiele więcej.
+
+Nasz plan od teraz jest więc zupełnie inny. Zamiast dodawać coraz więcej do naszej aplikacji, zajmiemy się różnorodnymi tematami, takimi jak lokalizacja, dokumentacja, struktura projektu i wiele innych. To stopniowo przekształci naszą aplikację w coś bardziej prezentowalnego podczas rozmów kwalifikacyjnych.
+
+Nie jest to próba napisania idealnego kodu. Nie szukamy dużych, sprytnych architektur, które rozwiązują mnóstwo problemów, pod warunkiem, że nie przeszkadza ci spędzenie tygodni na ich nauce. To jest aplikacja portfolio: chcesz pokazać, że masz dobre zrozumienie budowania aplikacji, a nie że chcesz zaadoptować najnowszy, najlepszy pomysł, który widziałeś na konferencji.
+
+Zatem zamierzamy zbadać różne tematy, które pomogą ulepszyć nasz kod, zawsze dbając o to, aby wybory były mądre, rozsądne i przede wszystkim pragmatyczne, ponieważ ostatecznie to ty będziesz wyjaśniać swój kod podczas rozmowy kwalifikacyjnej.
+
+Gdy skończymy porządkowanie, wrócimy do całości jeszcze raz, aby upewnić się, że wszystko razem pasuje. Zaczynajmy!
+
+
+
+## 17. Uczynienie Twojej aplikacji dostępną
+
+**AKTUALIZACJA:** Głęboko wierzę, że każda aplikacja na iOS powinna być dostępna dla wszystkich użytkowników. Włożenie pracy w to, aby Twoja aplikacja działała dobrze bez względu na to, kto z niej korzysta, wiele mówi o tym, jakim jesteś deweloperem.
+
+
+
+### Szybkie linki
+- **Krótki wstęp do VoiceOver**
+- **Grupowanie naszych danych**
+- **Dodawanie dodatkowych etykiet**
+
+### Krótki wstęp do VoiceOver
+
+iOS oferuje wiele technologii wspomagających, ale w centrum tego systemu znajduje się **VoiceOver**: system czytnika ekranu firmy Apple. Głównymi beneficjentami tego rozwiązania są oczywiście osoby niewidome i niedowidzące, ale VoiceOver robi o wiele więcej: informuje, jak system interpretuje Twój interfejs użytkownika, w tym, co jest widoczne i w jakiej kolejności.
+
+Na przykład, jest to naprawdę przydatne do znalezienia części interfejsu użytkownika, które są wizualnie ukryte (nie można ich zobaczyć na ekranie), ale nadal widoczne dla technologii wspomagających – interfejsy użytkownika, które wydają się być poza ekranem, są często w pełni nawigowalne za pomocą technologii wspomagających, co sprawia, że korzystanie z nich może być koszmarem.
+
+Dlatego gruntowne testowanie aplikacji z włączonym VoiceOver jest jednym z najważniejszych kroków w kierunku zbudowania doskonałej aplikacji.
+
+Jeśli nigdy wcześniej nie używałeś VoiceOver, sugeruję, abyś włączył go teraz – będziesz musiał skorzystać z fizycznego urządzenia, ponieważ nie działa on w symulatorze. Znajdziesz go w **Ustawienia > Dostępność > VoiceOver**. Po włączeniu zobaczysz przycisk „Ćwiczenie VoiceOver”, ale oto podstawowe informacje, które musisz znać:
+
+- Możesz stuknąć w konkretny element, aby go podświetlić, a następnie dwukrotnie stuknąć, aby go wybrać. Dotyczy to przycisków, kart, linków nawigacyjnych i innych.
+- Możesz przesuwać palcem w lewo lub w prawo, aby przechodzić między poprzednimi i następnymi elementami.
+- Jeśli chcesz wyświetlić menu kontekstowe, na przykład w **SidebarView**, stuknij trzykrotnie, wybierając element, a następnie przesuń palcem w lewo lub w prawo, aby przechodzić między opcjami, i dwukrotnie stuknij, aby je wybrać. Jeśli przeskoczysz poza menu, możesz je zamknąć.
+- Możesz przesuwać palcem w lewo, prawo, w górę lub w dół trzema palcami, aby przewijać.
+- Jeśli przesuniesz palcem w górę od dolnej krawędzi jednym palcem, a następnie przesuniesz go jeszcze trochę w górę, przejdziesz do ekranu głównego. Słuchaj małych dźwięków jako wskazówki.
+- Jeśli przesuniesz jeszcze dalej, przejdziesz do multitaskingu. Następnie możesz przesuwać palcem w lewo i prawo jednym palcem, aby przechodzić między oknami, a następnie dwukrotnie stuknąć, aby wybrać.
+
+Gdy VoiceOver działa, usłyszysz najpierw tytuł czegoś, potem opis, jaki rodzaj elementu jest wybrany (przycisk, obrazek itp.), a po krótkiej pauzie dodatkowy tekst, który programista aplikacji dodał, aby dać kontekst do tego, co robi dany obiekt – jest to tzw. podpowiedź.
+
+Na koniec warto dodać, że większość użytkowników VoiceOver ustawia szybkość mowy na bardzo wysokim poziomie – znacznie szybszym, niż jestem w stanie śledzić. Pamiętaj, że dla wielu osób jest to główny sposób korzystania z Twojej aplikacji, więc polegają na tym, aby informacje były przekazywane szybko i łatwo dostępne.
+
+Jeśli utkniesz: Słuchaj, używałem VoiceOver dużo i czuję się z nim komfortowo, ale pamiętam, że kiedy po raz pierwszy go wypróbowałem, miałem trudności z jego obsługą i wyłączeniem. Jeśli napotkasz podobny problem, zrelaksuj się: powiedz Siri „wyłącz VoiceOver” i gotowe.
+
+
+
+### Grupowanie naszych danych
+
+Gdy włączysz VoiceOver i spróbujesz poruszać się po aplikacji, istnieje duże prawdopodobieństwo, że pierwszym problemem, na jaki natkniesz się, będzie widok **Filters**: liczba zgłoszeń przypisanych do tagu jest odczytywana, jakby była częścią nazwy tagu. Na przykład, jeśli masz tag o nazwie **Tag 1**, który ma 7 zgłoszeń, VoiceOver odczytuje to jako „Tag 1 7”.
+
+Obie te informacje są ważne, ale są odrębne i mają hierarchię – nazwa tagu jest wyraźnie ważniejsza niż liczba zgłoszeń, które zawiera.
+
+Aby to naprawić, dodamy VoiceOverowi trochę więcej informacji: powiemy mu, że główną etykietą dla każdego tagu jest jego nazwa, a podpowiedzią jest liczba zgłoszeń, które ma. VoiceOver najpierw odczyta etykietę, następnie powie „Button”, aby użytkownik wiedział, że można go stuknąć, a na koniec odczyta podpowiedź.
+
+Jest jednak mały problem: ponieważ obecnie używamy modyfikatora **badge()** do wyświetlania liczby zgłoszeń, musimy powiedzieć VoiceOverowi, aby odczytał zarówno etykietę, jak i jej badge jako jeden element. Można to zrobić za pomocą modyfikatora **.accessibilityElement()**, który łączy widoki w jeden element dla technologii wspomagających.
+
+Dodaj te trzy modyfikatory poniżej menu kontekstowego w **SidebarView**:
+
+```swift
+.accessibilityElement()
+.accessibilityLabel(filter.name)
+.accessibilityHint("\(filter.tag?.tagActiveIssues.count ?? 0) issues")
+```
+
+To zadziała, ale nie jest to idealny kod – już mamy ten warunek łączenia `nil` z **badge**, a powtarzanie go nie jest świetnym rozwiązaniem, poza tym słabo działa to z pluralizacją – „2 issues” jest w porządku, „0 issues” działa dobrze, ale „1 issues” jest zdecydowanie błędne.
+
+Aby to poprawić, wykonamy kilka drobnych kroków. Po pierwsze, możemy usunąć cały kod dotyczący łączenia `nil` z obu naszych modyfikatorów **badge** i **hint**, centralizując go wewnątrz struktury **Filter** – dodaj nową właściwość obliczaną:
+
+```swift
+var activeIssuesCount: Int {
+    tag?.tagActiveIssues.count ?? 0
+}
+```
+
+Teraz możemy użyć jej w **badge**:
+
+```swift
+.badge(filter.activeIssuesCount)
+```
+
+I tak samo w **hint**:
+
+```swift
+.accessibilityHint("\(filter.activeIssuesCount) issues")
+```
+
+To usuwa powtarzanie kodu, ale nadal pozostaje problem z pluralizacją.
+
+Prostym rozwiązaniem jest użycie wbudowanego wsparcia iOS dla pluralizacji, co oznaczałoby zmianę podpowiedzi na to:
+
+```swift
+.accessibilityHint("^[\(filter.activeIssuesCount) issue](inflect: true)")
+```
+
+To korzysta z automatycznej zgodności gramatycznej, która jest funkcją z frameworka **Foundation** firmy Apple, automatycznie dostosowując „issue” do „issues”, gdy liczba zgłoszeń jest inna niż 1.
+
+Nie jest to idealne rozwiązanie, głównie dlatego, że automatyczna zgodność gramatyczna działa tylko w kilku językach, a częściowo również dlatego, że **Xcode** często wyświetla bezsensowne komunikaty podczas korzystania z niej, ale na razie jest to wystarczająco dobre rozwiązanie.
+
+### Dodawanie dodatkowych etykiet
+
+Teraz, gdy naprawiliśmy sposób, w jaki tagi są odczytywane, przyjrzyjmy się problemom z etykietowaniem. Są trzy kwestie, które chciałbym poruszyć:
+
+1. Zaznaczenie ikony nagrody odczytuje nazwę obrazu, co zazwyczaj jest bez znaczenia.
+2. Przesuwając po **ContentView**, nie ma dźwiękowego wskazania, gdy zgłoszenie ma wysoki priorytet.
+3. Data zgłoszeń jest odczytywana w sposób nieprzyjazny, na przykład „cztery ukośnik pięć ukośnik dwa tysiące dwadzieścia trzy”.
+
+Żaden z tych problemów nie jest trudny do naprawienia, więc po prostu zanurzmy się w kodzie i zobaczmy, co możemy zrobić.
+
+Po pierwsze, zaznaczenie nazwy nagrody powinno odczytywać tytuł nagrody, niezależnie od tego, czy jest odblokowana, czy zablokowana, a idealnie także opis po krótkiej przerwie. Możemy to zrobić za pomocą etykiety (**label**) i podpowiedzi (**hint**), a jeśli użytkownicy chcą uzyskać podpowiedź od razu, mogą po prostu uruchomić akcję przycisku, aby wyświetlić nasz istniejący alert.
+
+Dodaj te dwa modyfikatory poniżej przycisków nagród w **AwardsView**:
+
+```swift
+.accessibilityLabel(
+    dataController.hasEarned(award: award) ? "Unlocked: \(award.name)" : "Locked"
+)
+.accessibilityHint(award.description)
+```
+
+Po drugie, musimy sprawić, aby **IssueRow** opisywał, czy element ma wysoki priorytet, jako część swojej podpowiedzi, co możemy zrobić, dodając modyfikator do **NavigationLink** w **IssueRow**:
+
+```swift
+.accessibilityHint(issue.priority == 2 ? "High priority" : "")
+```
+
+To ładnie rozwiązuje problem z priorytetem – pusty ciąg po prostu nie zostanie odczytany w czasie wykonywania.
+
+Ostatnim problemem jest sposób odczytywania dat. Moglibyśmy po prostu zmienić kod daty z:
+
+```swift
+Text(issue.issueCreationDate.formatted(date: .numeric, time: .omitted))
+```
+
+Na to:
+
+```swift
+Text(issue.issueCreationDate.formatted(date: .abbreviated, time: .omitted))
+```
+
+To będzie brzmiało dużo lepiej, ale również wpłynie na wygląd, co nie jest idealne. Jeśli wolisz to rozwiązanie, śmiało, ale prostą alternatywą jest użycie numerycznej daty do wyświetlania i **.abbreviated** dla **VoiceOver**, jak poniżej:
+
+```swift
+Text(issue.issueCreationDate.formatted(date: .numeric, time: .omitted))
+    .accessibilityLabel(issue.issueCreationDate.formatted(date: .abbreviated, time: .omitted))
+    .font(.subheadline)
+```
+
+Wskazówka: Widok **Text** w **SwiftUI** jest w stanie bezpośrednio wyświetlać daty, np. `Text(issue.issueCreationDate, style: .date)`, ale nie daje nam kontroli nad sposobem, w jaki daty są odczytywane, więc rzadko z tego korzystam.
+
+Tak czy inaczej, omówiliśmy sporo: podstawy korzystania z **VoiceOver**, grupowanie widoków, automatyczną zgodność gramatyczną, dodawanie niestandardowych etykiet i podpowiedzi oraz wiele więcej. Końcowy efekt to interfejs użytkownika, który każdy może nawigować za pomocą technologii wspomagających, który **VoiceOver** może dobrze odczytywać, i który ostatecznie sprawia, że nasza aplikacja jest dostępna dla wszystkich.
+
+## 18. Internacjonalizacja i lokalizacja
+
+
+
+Nasza aplikacja została zaprojektowana do działania w języku angielskim, i chociaż możesz nie chcieć tego zmieniać, powinieneś przynajmniej być w stanie to zrobić. Zajmijmy się tym teraz…
+
+### Szybkie linki
+- **i18n vs l10n**
+- **Internationalization 101**
+- **Lokalizacja na język angielski**
+- **Czyszczenie**
+- **Obsługa liczby mnogiej**
+- **Lokalizacja danych edytowanych przez użytkownika**
+- **Na koniec: inteligentne filtry**
+- **Co dalej?**
+- **I teraz: lokalizacja**
+- **A co z nagrodami?**
+
+### i18n vs l10n
+
+Podczas pracy z internacjonalizacją i lokalizacją spotkasz się często z dwoma terminami: „i18n” i „l10n”, które są skrótami od „internationalization” (internacjonalizacja) i „localization” (lokalizacja). Dlaczego? To dość proste: „internationalization” to litera I, po której następuje 18 liter, a następnie N, a „localization” to litera L, po której następuje 10 liter, a następnie N!
+
+Oba te skróty mają na celu ułatwienie pisania i są szczególnie powszechne, gdy przechowuje się katalogi plików – na przykład pliki językowe mogą być przechowywane w katalogu **i18n**.
+
+To jest prosta część. Trochę bardziej myląca jest różnica między tymi dwoma słowami:
+
+- **Internacjonalizacja** oznacza „przygotowanie aplikacji do poprawnego działania w innych językach”.
+- **Lokalizacja** oznacza „dodanie konkretnych języków do aplikacji, np. niemiecki i francuski”.
+
+W tym artykule zrobimy obie rzeczy dla naszej aplikacji: najpierw zinternacjonalizujemy ją, aby obsługiwała dowolne języki, a następnie zlokalizujemy ją na jeden konkretny język: węgierski. Tak, węgierski. To nie jest przypadek: język węgierski ma szczególnie długie słowa i często używa bardziej złożonego alfabetu niż nasz, więc to świetny sposób na przetestowanie układów. Co więcej, moja żona jest Węgierką, więc może upewnić się, że mam dobre tłumaczenia, na wypadek gdybyś użył moich plików językowych i przypadkiem trafił na rozmowę kwalifikacyjną u Węgra! (Dla Węgrów wśród publiczności: „A légpárnás hajóm tele van angolnákkal!”)
+
+### Internationalization 101
+
+Zanim dotkniemy naszego kodu, chcę przedstawić Ci ważne ustawienie w Xcode, które pomoże nam znaleźć problemy z internacjonalizacją: przejdź do menu **Product**, przytrzymaj klawisz **Option**, a następnie wybierz **Run**. Teraz przejdź do zakładki **Options** i zaznacz pole obok **Localization Debugging**, „Show non-localized strings”.
+
+Ta opcja automatycznie dostosuje wygląd naszej aplikacji w symulatorze, tak aby każdy tekst, który nie jest zlokalizowany – a teraz jest to wszystko – był wyświetlany W WIELKICH LITERACH.
+
+Może to być początkowo mylące, zwłaszcza że właśnie powiedziałem Ci, że internacjonalizacja i lokalizacja to różne rzeczy. Ale po zakończeniu internacjonalizacji aplikacji, również ją zlokalizowałeś – dodałeś swój oryginalny język.
+
+Różnica z perspektywy użytkowników jest nieistotna, ale ma to znaczenie w naszym kodzie: zamiast tworzyć przycisk z napisem „Hello, World!” bezpośrednio, umieszczamy „Hello, World!” w oddzielnym pliku, który zawiera wszystkie nasze inne ciągi znaków w jednym miejscu i który jest wyświetlany użytkownikom. Oba mają ten sam efekt końcowy: użytkownicy widzą „Hello, World!” na ekranie, ale skutecznie zlokalizowaliśmy naszą aplikację na język angielski. Co więcej, gdy będziemy chcieli dodać węgierski, francuski lub jakikolwiek inny język, wystarczy zmienić plik ciągów znaków, aby uzyskać nowy tekst.
+
+Tak czy inaczej, z zaznaczonym tym polem uruchom aplikację ponownie. To, co teraz zobaczysz, jest zupełnie inne: duże części naszej aplikacji zmieniły się na tekst pisany wielkimi literami, ale nie wszystko:
+
+- Nazwy tagów są napisane normalnie, co ma sens, ponieważ są to dane użytkownika, a nie ciągi znaków zapisane w kodzie.
+- Nazwy zgłoszeń są również napisane normalnie, z tego samego powodu.
+- Wszystkie tytuły alertów i wiadomości w arkuszu nagród są zapisane małymi literami.
+- Poza tymi trzema przypadkami, prawie wszystko inne jest zapisane wielkimi literami.
+
+Jeśli nie widzisz powiązania między różnymi elementami zapisanymi małymi literami, wszystkie one wstawiają swoje ciągi znaków jako zmienne, które są traktowane specjalnie przez **SwiftUI** – jeśli obliczasz wartość programowo, to nie będzie próbował jej lokalizować za Ciebie. To różni się od używania interpolacji ciągów znaków, jak zobaczysz.
+
+Inną rzeczą, na którą warto zwrócić uwagę, jest to, że zobaczysz wiele informacji drukowanych w konsoli debugowania. Być może ignorowałeś to przez jakiś czas, ponieważ iCloud uwielbia używać tego jako miejsca do zapisywania logów, ale teraz zobaczysz znacznie więcej komunikatów – jeden dla każdego ciągu znaków, który nie został zlokalizowany.
+
+Więc, symulator pokazuje niezlokalizowany tekst wielkimi literami, a Xcode drukuje znacznie więcej ostrzeżeń do swojej konsoli. Początkowo może to być irytujące, ale uwierz mi – posiadanie tego ustawienia znacznie ułatwia identyfikację i naprawę problemów.
+
+
+
+### Lokalizacja na język angielski
+
+Naszym pierwszym krokiem jest wyodrębnienie angielskich ciągów znaków z naszej aplikacji i przechowanie ich w osobnym miejscu. Pozostaną one w języku angielskim, ale po zakończeniu pracy nasza aplikacja będzie zinternacjonalizowana – będzie gotowa do pracy w dowolnym innym języku, który będziemy chcieli dodać.
+
+1. **Utwórz plik `Localizable.strings`:**
+   
+   - Najpierw utwórz nowy plik i wybierz **Strings File** z listy opcji. Nazwij go **Localizable.strings**, co sprawi, że Xcode automatycznie wykryje i użyje go do lokalizacji.
+   
+2. **Dodaj pierwszy wpis:**
+   - Dodaj ten tekst na końcu pliku:
+     ```plaintext
+     "Filters" = "Fish";
+     ```
+
+   - Tak, „Fish” (ryba). Za chwilę wyjaśnię, co się tutaj dzieje, ale najpierw uruchom program ponownie i zobacz różnicę na własne oczy.
+
+Jeśli wszystko poszło dobrze, powinieneś zobaczyć, że słowo „Filters” w pasku nawigacyjnym zostało zastąpione słowem „Fish”. Oczywiście jest to tutaj bez znaczenia, ale specjalnie wybrałem to słowo, aby się wyróżniało, dzięki czemu możesz zobaczyć, jak łatwo SwiftUI umożliwia lokalizację.
+
+Teraz, wracając do naszego pliku lokalizacji: oto co widzisz:
+
+- **Po lewej stronie** znajduje się ciąg kluczowy, który w tym przypadku to „Filters”. Jest to nazwa ciągu znaków, której użyliśmy w naszym kodzie SwiftUI.
+- **Po prawej stronie** znajduje się ciąg wartości, który w tym przypadku to „Fish” – zabawne słowo, które wybrałem, aby nasza lokalizacja była oczywista.
+- **Na końcu** znajduje się średnik. Często będziesz o nim zapominał, ale jest wymagany, a Xcode wyrzuci całkowicie bezużyteczny błąd, gdy o nim zapomnisz – po prostu powie „the input data is in an invalid format” (dane wejściowe są w nieprawidłowym formacie), bez wskazania, która linia jest problematyczna.
+
+Opcjonalnie możesz także dołączyć komentarze w tym pliku, używając `//` lub `/* ... */` – są one pomocne w opisie kontekstu, w którym pojawia się dany ciąg.
+
+3. **Zmiana modyfikatora `navigationTitle`:**
+   - Powodem, dla którego ta pojedyncza linia wystarczyła, aby SwiftUI przetłumaczył nasz tekst, jest to, że modyfikator `navigationTitle()` ma trzy formy. Jeśli klikniesz na niego prawym przyciskiem myszy i wybierzesz „Jump To Definition”, zobaczysz je wszystkie w wygenerowanym interfejsie dla SwiftUI:
+     ```swift
+     public func navigationTitle(_ titleKey: LocalizedStringKey) -> some View
+     public func navigationTitle<S>(_ title: S) -> some View where S : StringProtocol
+     ```
+     Druga z tych funkcji pozwala na użycie ciągów znaków i podciągów, ale to pierwsza z nich wykonuje tutaj pracę: struktura **LocalizedStringKey** może być tworzona bezpośrednio z ciągu znaków, więc gdy piszemy „Filters”, Swift faktycznie interpretuje to jako obiekt **LocalizedStringKey**. Ten obiekt jest następnie przekazywany do SwiftUI, które wyszukuje go w pliku **Localizable.strings** i automatycznie prezentuje poprawną wartość.
+
+4. **Dalsze lokalizowanie:**
+   - W praktyce oznacza to, że dla dużej części twojego kodu możesz efektywnie uzyskać internacjonalizację „za darmo” – za każdym razem, gdy wpisujesz ciąg bezpośrednio w swoim kodzie, SwiftUI automatycznie próbuje go znaleźć w tabeli lokalizacji.
+   - W związku z tym spora część początkowej lokalizacji będzie polegała na umieszczaniu tego samego ciągu zarówno jako klucz, jak i wartość. Więc zmień swój poprzedni wpis **Localizable.strings** na:
+     ```plaintext
+     "Filters" = "Filters";
+     ```
+
+5. **Automatyczne wyodrębnianie ciągów:**
+   - Teraz prawdopodobnie myślisz, że czeka Cię mnóstwo pracy związanej z wyszukiwaniem i wyciąganiem wszystkich ciągów znaków z kodu, ale na szczęście Xcode posiada bardzo przydatne narzędzie wiersza poleceń, które ułatwia to zadanie.
+   - Uruchom aplikację **Terminal** i przejdź do katalogu ze swoim kodem Swift. W moim przypadku oznaczałoby to uruchomienie polecenia `cd ~/Desktop/UltimatePortfolio/UltimatePortfolio`.
+   - Teraz uruchom to polecenie: `genstrings -SwiftUI *.swift`. Używa ono programu **genstrings** Xcode do znalezienia i wyodrębnienia jak największej liczby ciągów znaków w twoim kodzie. Nie jest idealne – śledzi tylko tekst przechowywany wewnątrz widoku **Text** – ale daje ci dobry początek.
+
+6. **Rozwiązywanie problemów:**
+   - Może się zdarzyć, że napotkasz komunikat o błędzie, taki jak: `genstrings: error: bad entry in file IssueRow.swift (line = 34): Argument is not a literal string`. Oznacza to, że **genstrings** znalazł miejsce, w którym nie wie, co zrobić – może wyodrębnić wiele zakodowanych na sztywno ciągów, ale ta linia kodu go myli:
+     ```swift
+     Text(issue.issueCreationDate.formatted(date: .numeric, time: .omitted))
+     ```
+   - Prostym sposobem na naprawienie tego jest wyodrębnienie kodu do czegoś prostszego, z czym **genstrings** nie będzie miał problemu. Więc skopiuj wszystko wewnątrz **Text()** i przenieś to do pliku **Issue-CoreDataHelpers.swift** jako właściwość obliczaną:
+     ```swift
+     var issueFormattedCreationDate: String {
+         issueCreationDate.formatted(date: .numeric, time: .omitted)
+     }
+     ```
+   - Teraz możemy odwołać się do tej właściwości w **IssueRow**, jak poniżej:
+     ```swift
+     Text(issue.issueFormattedCreationDate)
+     ```
+
+7. **Generowanie zaktualizowanego pliku `Localizable.strings`:**
+   - Teraz, gdy **genstrings** może działać poprawnie, automatycznie nadpisze istniejący plik **Localizable.strings** swoimi wynikami. Jeśli ponownie uruchomisz aplikację, zobaczysz, że ilość tekstu pisanego wielkimi literami nieco się zmniejszyła – wyodrębnił większość opcji w **IssueView** i niektóre tytuły menu w **ContentView**, ale niewiele więcej.
+   - Jeśli otworzysz **Localizable.strings**, znajdziesz tam różne ciągi znaków, przy czym klucz i wartość są zawsze takie same, ponieważ oczywiście narzędzie to nie może dla nas tłumaczyć tekstu. Zauważ także, że przed każdym ciągiem znajduje się komentarz, który jest twoją szansą na opisanie, jak klucz jest używany, aby pomóc tłumaczom w dokonaniu dobrej translacji.
+
+Najważniejsze jest to, że nasz kod Swift pozostaje niezmieniony: nadal mamy „Filters”, „Issues” i tak dalej w naszym kodzie Swift, jako klucze lokalizowanych ciągów naszej aplikacji.
