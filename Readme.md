@@ -3652,3 +3652,348 @@ To nic specjalnego i w rzeczywistości podąża za dokładnie tymi samymi krokam
 Wybierz **Awards.json**, kliknij **Localize** i przenieś go do angielskiego. Teraz zaznacz pole węgierskie i przystąp do tłumaczenia węgierskich ciągów znaków – albo po prostu skopiuj mój plik **Awards.json** z pobrania dla tego artykułu.
 
 W tym momencie skończyliśmy! Nauczyłeś się, jak zinternacjonalizować aplikację, w tym jak radzić sobie z liczbą mnogą, i jak zlokalizować ją na określony język. Pamiętaj, że precyzyjny język, który wybierzesz, nie ma tak naprawdę znaczenia w przypadku aplikacji do portfolio, ponieważ większość czasu chodzi o wykazanie technik i zrozumienia.
+
+
+
+## 19. Czyszczenie kodu
+
+ZAKTUALIZOWANE: Chociaż nasze układy SwiftUI są zgodne z protokołem View, jeśli spróbowałbyś myśleć o nich w kategoriach MVC, powiedziałbym, że są bardziej podobne do kontrolerów. I podobnie jak kontrolery z UIKit, musimy włożyć trochę pracy, aby utrzymać widoki SwiftUI w zwięzłej formie – przyjrzyjmy się temu teraz…
+
+### Szybkie linki
+- MVC wkracza do SwiftUI
+- Dlaczego to ma znaczenie
+- Obliczanie właściwości
+- Wyodrębnianie widoków
+- Przechodzimy do IssueView
+- Zadanie dla Ciebie: ContentView
+- Przechodzenie od opisu do intencji
+- Gdzie się zatrzymać?
+
+### MVC wkracza do SwiftUI
+Kiedy pisaliśmy aplikacje dla UIKit, wiele osób starało się stosować wzorzec projektowy MVC: M oznacza Model, który reprezentuje nasze struktury danych; V oznacza View, czyli nasz interfejs użytkownika; a C oznacza Controllers, które zarządzają logiką, taką jak komunikacja danych między modelem a widokiem, reagowanie na interakcje użytkownika i inne.
+
+W praktyce robiło się to dość chaotyczne, częściowo dlatego, że Apple dało nam kontrolery widoków w UIKit, ale także dlatego, że bardzo łatwo było umieszczać dużo kodu w tych kontrolerach, co sprawiło, że MVC zaczęło oznaczać Massive View Controller (Ogromny Kontroler Widoku).
+
+Jeśli chodzi o SwiftUI, wiele osób stara się bezpośrednio przenieść MVC do swoich nowych projektów, co niekoniecznie jest dobrym pomysłem. Rozumiem to: jeśli używałeś MVC przez 10 lub więcej lat, oczywiście chcesz go kontynuować, przechodząc do SwiftUI, ale może to być naprawdę niewygodne, jeśli nie będziesz ostrożny.
+
+Oczywiście możemy przejść od modelu UIKit do modelu SwiftUI, to ma sens, bo dane to po prostu dane. Ale gdzie podziali się nasi kontrolerzy? I co właściwie tworzy widok?
+
+SwiftUI ma dedykowany protokół o nazwie View, który musi być zaimplementowany przez każdą strukturę, która chce być renderowana w naszej hierarchii widoków. Ale czy to oznacza, że są to rzeczywiście widoki w sensie MVC? W rzeczywistości nie rysujemy rzeczy w widokach SwiftUI, tylko układamy strukturę, używając modyfikatorów do dostosowywania zachowania.
+
+Więc, jeśli ktoś zapytałby mnie, jak przenieść SwiftUI do MVC, nie powiedziałbym, że widoki SwiftUI są widokami MVC. Zamiast tego staram się myśleć o widokach SwiftUI bardziej jako o kontrolerach: opisujemy, jak rzeczy powinny funkcjonować, kiedy nasz program działa, dodając funkcjonalność do naszych układów, aby kontrolować ich zachowanie, wstawiając warunki i pętle tam, gdzie to potrzebne, bezpośrednio w naszym kodzie.
+
+Jeśli więc modele MVC to modele SwiftUI, a kontrolery MVC to widoki SwiftUI, to gdzie są widoki MVC – jak mapują się one do SwiftUI?
+
+Cóż, pomyśl o tym: cały ten kod kontrolera, który mamy, opisujący nasze układy, musi na pewnym etapie stać się rzeczywistymi renderowanymi widokami, a to jest zadanie SwiftUI. Wszystkie prymitywne typy widoków, takie jak tekst, obraz i kolory, ale także wszelkie widoki, które są renderowane z UIKit i AppKit – to są rzeczywiste widoki.
+
+I dlatego, kiedy piszemy kod SwiftUI, jeśli chcielibyśmy go mapować na starszy sposób myślenia w MVC, tak naprawdę piszemy MC. Cała rzeczywista prezentacja naszych modeli i kontrolerów jest obsługiwana przez SwiftUI, co sprawia, że jest on tak niesamowicie międzyplatformowy – sposób, w jaki coś jest renderowane, zmienia się w zależności od tego, gdzie jest uruchamiany nasz kod.
+
+Moim ulubionym przykładem tego jest TabView, który na iOS staje się paskiem zakładek na dole, na macOS staje się listą zakładek u góry, na watchOS staje się przesuwnymi stronami z kropkami u dołu, a na tvOS staje się kontrolką segmentową. Nie martwimy się o renderowanie – nawet nie mamy nad nim kontroli – to wszystko jest obsługiwane przez SwiftUI w naszym imieniu.
+
+### Dlaczego to ma znaczenie
+Możesz pomyśleć, że to wszystko o MVC nie ma już znaczenia, ale musisz zrozumieć, że kładzie to ogromny nacisk na nasze widoki SwiftUI: nie tylko organizują nasze układy, ale są również pełne funkcji, które ożywiają te układy.
+
+To naturalnie prowadzi do powstawania ogromnych widoków, które są naprawdę trudne do utrzymania, a w praktyce niemożliwe do ponownego użycia. Co gorsza, większość tego kodu często trafia do właściwości `body`, co sprawia, że jest trudny do odczytania i zrozumienia, co jeden widok próbuje zrobić.
+
+Dlatego w tym artykule przyjrzymy się sposobom na uproszczenie naszych widoków, aby były prostsze i łatwiejsze w użyciu. Nie wyrzucimy żadnej funkcjonalności – końcowy wynik będzie identyczny dla użytkowników – ale sprawimy, że nasz kod będzie łatwiejszy, co jest ważne.
+
+Podczas naszej pracy będziemy głównie trzymać się jednej jasnej i prostej zasady: podzielić właściwość `body` tak, aby była łatwiejsza do zrozumienia. Oznacza to wykonywanie obliczeń gdzie indziej, aby to, co pozostaje w `body`, było stałe. Rzeczywista praca się nie zmienia, po prostu oddzielamy logikę układu od logiki obliczeniowej, co jak zobaczysz później, pozwala nam pisać kod, który jest bardziej testowalny.
+
+Oznacza to również dzielenie układów na osobne części, używając różnych technik, tak aby każda część układu była samodzielna. Całkowita ilość kodu pozostanie taka sama – może nawet wzrosnąć o kilka linii dzięki podpisom metod i podobnym – ale oznacza to, że piszemy małe, kompozycyjne fragmenty kodu, a następnie używamy ` do ich złożenia w jeden końcowy interfejs użytkownika.
+
+
+
+### Obliczanie właściwości
+
+Dwa przykłady, gdzie można przenieść funkcjonalność, znajdują się w **AwardsView**, gdzie obliczamy kolor i etykietę dostępności dla naszych nagród. Obecnie używamy tego kodu do koloru:
+
+```swift
+.foregroundColor(dataController.hasEarned(award: award) ? Color(award.color) : .secondary.opacity(0.5))
+```
+
+A tego do etykiety dostępności:
+
+```swift
+.accessibilityLabel(dataController.hasEarned(award: award) ? "Unlocked: \(award.name)" : "Locked")
+```
+
+Osoba, która patrzy na tę część kodu, nie jest zainteresowana tym, jak te dane są obliczane, ale raczej tym, jak są używane na ekranie.
+
+Dlatego warto przenieść oba fragmenty logiki do osobnych metod:
+
+```swift
+func color(for award: Award) -> Color {
+    dataController.hasEarned(award: award) ? Color(award.color) : .secondary.opacity(0.5)
+}
+
+func label(for award: Award) -> LocalizedStringKey {
+    dataController.hasEarned(award: award) ? "Unlocked: \(award.name)" : "Locked"
+}
+```
+
+Etykieta nadal używa **LocalizedStringKey**, co oznacza, że będzie nadal automatycznie lokalizowana przez SwiftUI w czasie wykonywania. Ale teraz, gdy cała praca jest umieszczona w lepszym miejscu, możemy uprościć ciało widoku, najpierw dla koloru pierwszego planu:
+
+```swift
+.foregroundColor(color(for: award))
+```
+
+A następnie dla etykiety dostępności:
+
+```swift
+.accessibilityLabel(label(for: award))
+```
+
+Tutaj pojawia się ważna dodatkowa korzyść – posiadanie kodu jako metody znacznie ułatwia pisanie testów – o czym więcej później!
+
+### Wyodrębnianie widoków
+
+Bazy danych są standardowym podejściem do przechowywania i przetwarzania danych na całym świecie, a podczas projektowania baz danych istnieje proces, który nazywamy normalizacją. Jest to proces redukcji nadmiarowości danych poprzez ich podział.
+
+Na przykład, jeśli miałbyś rekordy bazy danych, które śledzą indywidualne sprzedaże ze sklepu, tworzyłbyś jeden rekord za każdym razem, gdy ktoś coś kupi, śledząc, jak nazywa się użytkownik, jaki jest jego identyfikator, ile zapłacił i tak dalej. Jeśli się nad tym zastanowisz, choć nazwa użytkownika jest ważna, jest trochę zbędna, ponieważ już znamy jego identyfikator. Co gorsza, jeśli użytkownik złoży wiele zamówień, jego imię będzie skopiowane wiele razy w wielu rekordach zamówień.
+
+Aby rozwiązać ten problem w bazach danych, wyciągamy dane do oddzielnych rekordów - tworzymy rekord użytkownika z jego identyfikatorem, nazwą, informacjami o dostawie, informacjami o płatności i tak dalej, a następnie, gdy ten użytkownik złoży zamówienie, musimy tylko wiedzieć, że „użytkownik 24601 złożył to zamówienie” i możemy resztę danych wyciągnąć.
+
+To samo często dzieje się w kodzie SwiftUI: tworzymy widoki, które opisują wszystko, co jest potrzebne na ekranie, ale zwykle nie myślimy o wszystkim – nie musimy znać wszystkich opcji konfiguracyjnych dla każdego widoku, gdy szukamy czegoś konkretnego.
+
+Na przykład, właściwość body SidebarView ma obecnie 62 linie długości. To nie jest nasz najdłuższy widok – to wątpliwe wyróżnienie przypada IssueView – ale jest to łatwe miejsce do rozpoczęcia. Ten jeden widok robi kilka rzeczy:
+
+- Tworzy listę z dwoma sekcjami, które mają różną funkcjonalność.
+- Ma dwa lub trzy przyciski na pasku narzędzi, w zależności od tego, czy zachowałeś przycisk debugowania.
+- Dołącza alert i arkusz.
+- Konfiguruje tytuł nawigacyjny.
+
+Najłatwiejszym krokiem jest tutaj pasek narzędzi – zwykle tworzymy je, a następnie zapominamy o nich, ale umieszczanie ich bezpośrednio w kodzie widoku sprawia, że mieszają się one z rzeczywistym układem, który należy do tego widoku.
+
+Więc, co chcę, abyś zrobił, to zaznaczył zawartość modyfikatora toolbar() i wyciął ją do schowka. Teraz stwórz nowy widok SwiftUI o nazwie **SidebarViewToolbar**, i wklej zawartość schowka do właściwości body tam. Pojawią się błędy, ponieważ nasz kod odnosi się do **dataController** i **showingAwards**, ale możemy to naprawić, dodając dwie nowe właściwości do **SidebarViewToolbar**:
+
+```swift
+@EnvironmentObject var dataController: DataController
+@Binding var showingAwards: Bool
+```
+
+Uwaga: Ważne jest używanie @Binding tutaj, ponieważ odnosimy się do właściwości typu value, która jest tworzona i zarządzana gdzieś indziej.
+
+Będziesz musiał zaktualizować podgląd dla **SidebarViewToolbar**, aby przesłać wiązanie, ale może to być stałe wiązanie, takie jak to:
+
+```swift
+struct SidebarViewToolbar_Previews: PreviewProvider {
+    static var previews: some View {
+        SidebarViewToolbar(showingAwards: .constant(true))
+    }
+}
+```
+
+Na koniec możemy wrócić do **SidebarView**, aby dostosować modyfikator toolbar, tak aby używał naszego osobnego widoku:
+
+```swift
+.toolbar {
+    SidebarViewToolbar(showingAwards: $showingAwards)
+}
+```
+
+To całkowicie wyodrębniło pasek narzędzi do własnego widoku SwiftUI. Jeśli wcześniej pisałeś kod UIKit, to jest dokładnie tak, jak budowalibyśmy tam paski narzędzi: tworzymy elementy indywidualnie, a następnie łączymy je razem w rzeczywisty pasek narzędzi.
+
+Teraz możemy pójść o krok dalej: ponieważ pasek narzędzi jest odpowiedzialny za wyświetlanie widoku nagród, możemy przenieść **showingAwards** do **SidebarViewToolbar**, abyśmy nie musieli w ogóle przekazywać wiązania. Na plus, to ładnie kapsułkuje funkcjonalność, jednocześnie usuwając właściwość @State i modyfikator sheet() z **SidebarView**. Jednak mam wątpliwości związane z klasyczną „zasadą najmniejszego zaskoczenia” – zawsze warto pisać kod, który nie jest zaskakujący dla innych czytających go, a można silnie argumentować, że pasek narzędzi odpowiedzialny za prezentowanie widoków jest zaskakującym zachowaniem.
+
+Pamiętaj: to jest w porządku. To są najbardziej interesujące części każdej aplikacji demonstracyjnej – stoisz przed wyborem architektonicznym i dokładnie to, jaki kurs wybierzesz, jest mniej interesujące niż twoje uzasadnienie tego wyboru.
+
+Więc zatrzymaj się i pomyśl: jeśli patrzysz na kod teraz i uważasz, że jest w porządku, to trzymaj się go, ale jeśli wolisz zobaczyć, jak to wygląda, przenosząc wszystko do paska narzędzi, pokażę ci, jak to wygląda.
+
+Najpierw musisz zmienić **@Binding** na **@State** w **SidebarViewToolbar**:
+
+```swift
+@State private var showingAwards = false
+```
+
+Po drugie, dostosuj kod podglądu, aby nie przesyłać wiązania:
+
+```swift
+struct SidebarViewToolbar_Previews: PreviewProvider {
+    static var previews: some View {
+        SidebarViewToolbar()
+    }
+}
+```
+
+Po trzecie, usuń właściwość **showingAwards** z **SidebarView**.
+
+Po czwarte, dostosuj modyfikator **toolbar()** w **SidebarView**, aby nie przesyłać żadnego wiązania:
+
+```swift
+.toolbar(content: SidebarViewToolbar.init)
+```
+
+Na koniec przenieś modyfikator **sheet()** z **SidebarView** do gdzieś w **SidebarViewToolbar**. Nie ma jednego widoku, do którego można by go dołączyć, jak często bywa, ale to w porządku – dowolne miejsce, które jest gwarantowane w hierarchii widoków, jest w porządku, i byłoby to jasne i czytelne, jeśli dołączysz go bezpośrednio do przycisku **Show Awards**:
+
+```swift
+Button {
+    showingAwards.toggle()
+} label: {
+    Label("Show awards", systemImage: "rosette")
+}
+.sheet(isPresented: $showingAwards, content: AwardsView.init)
+```
+
+Teraz, gdy zobaczyłeś obie opcje, którą wolisz i dlaczego? Nie ma tu tak naprawdę „właściwej” odpowiedzi, więc w porządku, jeśli widzisz zalety i wady obu – najważniejsze jest to, że jesteś w stanie je rozpoznać i mam nadzieję, że będziesz w stanie o nich pewnie mówić.
+
+
+
+### Przechodząc do IssueView
+
+Teraz, gdy **SidebarView** jest trochę czystszy, możemy przejść do **IssueView** – ma ten sam problem i tak samo można go rozwiązać. Skopiuj zawartość jego modyfikatora **toolbar()** do schowka, a następnie wklej ją do właściwości **body** nowego widoku **IssueViewToolbar** w SwiftUI. Będziesz musiał również skopiować dwie właściwości dla **dataController** i **issue**, a także zaktualizować kod podglądu, aby przesyłał nasz przykładowy problem **.example**.
+
+Twój gotowy kod powinien wyglądać tak:
+
+```swift
+struct IssueViewToolbar: View {
+    @EnvironmentObject var dataController: DataController
+    @ObservedObject var issue: Issue
+
+    var body: some View {
+        Menu {
+            Button {
+                UIPasteboard.general.string = issue.title
+            } label: {
+                Label("Copy Issue Title", systemImage: "doc.on.doc")
+            }
+
+            Button {
+                issue.completed.toggle()
+                dataController.save()
+            } label: {
+                Label(issue.completed ? "Re-open Issue" : "Close Issue", systemImage: "bubble.left.and.exclamationmark.bubble.right")
+            }
+        } label: {
+            Label("Actions", systemImage: "ellipsis.circle")
+        }
+    }
+}
+
+struct IssueViewToolbar_Previews: PreviewProvider {
+    static var previews: some View {
+        IssueViewToolbar(issue: Issue.example)
+    }
+}
+```
+
+A teraz twój modyfikator **toolbar()** w **IssueView** wygląda po prostu tak:
+
+```swift
+.toolbar {
+    IssueViewToolbar(issue: issue)
+}
+```
+
+Ponownie, oznacza to, że podzieliliśmy nasz widok na niezależne części, dzięki czemu teraz łatwiej jest czytać główny kod widoku i zobaczyć dokładnie, co on robi.
+
+### Jeden dla Ciebie: ContentView
+
+Jeśli masz jakiekolwiek wątpliwości co do wartości tego podejścia, przyjrzyjmy się jeszcze jednemu przykładowi: **ContentView**. Posiada ono właściwość **body**, która ma 55 linii długości, z czego 45 to toolbar! Co powinno być łatwe do odczytania jako trywialny widok, wygląda na skomplikowane, co nie jest pomocne.
+
+Nie będę tego naprawiał za Ciebie – chciałbym, żebyś zrobił to sam. Nie martw się, to najłatwiejsze z trzech! W rzeczywistości szybko zobaczysz, że potrzebuje ono tylko jednej właściwości:
+
+```swift
+@EnvironmentObject var dataController: DataController
+```
+
+A kiedy skończysz, okaże się, że kod w **ContentView** staje się po prostu taki:
+
+```swift
+.toolbar(content: ContentViewToolbar.init)
+```
+
+Najlepsze jest to, że teraz jest jasne, że **ContentView** jest trywialne – lista, tytuł, pole wyszukiwania i toolbar.
+
+### Przechodząc od opisu do intencji
+
+Widoki, które właśnie wyodrębniliśmy, były mile widzianą poprawą w naszym kodzie, ale istnieje głębszy powód, dla którego to robimy.
+
+Jeśli kiedykolwiek programowałeś strony internetowe za pomocą CSS, wiesz, że istnieją dwa sposoby stylizowania fragmentu HTML: możemy napisać style inline, takie jak „dodaj górne wcięcie o 10 pikseli, użyj dużej czcionki i nadaj jej ciemnoszary kolor”, lub możemy użyć klas, które są po prostu nazwami z tymi stylami już przypisanymi, np. „zrób z tego nagłówek”. Różnica jest niewielka, ale ważna: gdy używamy klasy CSS, mówimy systemowi, co chcemy osiągnąć, a nie jak wszystko zrobić.
+
+To dokładnie to, co właśnie zrobiliśmy z naszym kodem toolbara: zamiast musieć pisać explicite „oto, jak chcę, żeby wszystkie części toolbara wyglądały” w kodzie widoku, po prostu powiedzieliśmy „dodaj tutaj toolbar”.
+
+Poza toolbarami istnieje kilka miejsc w naszym kodzie, gdzie wyodrębnienie widoków naprawdę pomoże. Przeprowadzę Cię przez trzy z nich, ale w tym momencie już wiesz, jak to się robi, więc mam nadzieję, że teraz poświęcisz minutę, aby przejrzeć projekt i spróbować samodzielnie zidentyfikować potencjalne cele.
+
+Wciąż tutaj?
+
+Dobrze, są trzy miejsca, które moim zdaniem powinny zostać wyodrębnione: oba typy wierszy w **SidebarView** oraz menu tagów w **IssueView**. Pierwsze dwa z nich to wyodrębnienie wierszy listy, co jest czymś, o czym wspominam w wielu innych moich tutorialach SwiftUI: listy zazwyczaj działają najlepiej, gdy są oddzielone od swoich wierszy listy.
+
+To ostatnie może być zaskoczeniem, ale zastanów się: menu tagów w **IssueView** to 30 linii kodu zaprojektowanego specjalnie po to, aby umożliwić użytkownikowi wybór lub odznaczenie tagów, ale to nie jest od razu oczywiste, gdy po prostu patrzysz na kod – to nie jest proste **Image** lub jakiś **Text**, ale złożona mieszanka **ForEach**, **Button**, **Label**, **Text**, **Section** i innych, wraz z wywołaniami do **DataController**. To naprawdę powinno być elegancko odizolowane jako własny widok, ponieważ gdybyś czytał **IssueView** i zobaczył odwołanie do **TagSelectionView** lub podobnego, od razu byłoby jasne, co ono robi.
+
+Więc trzy zmiany, z których żadna nie powinna być szczególnie problematyczna. Zacznijmy od tagów, ponieważ otwiera to świat możliwości dzięki pięknie kompozycyjnemu charakterowi SwiftUI.
+
+1. Stwórz nowy widok SwiftUI o nazwie **TagsMenuView**.
+2. Przenieś cały widok **Menu** z **IssueView** do jego właściwości **body**.
+3. Dodaj właściwość **@EnvironmentObject** dla **dataController**, a następnie **@ObservedObject** dla **issue**.
+4. Zaktualizuj kod podglądu, aby używał przykładowego problemu, jak ten: **TagsMenuView(issue: .example)**.
+5. Wreszcie, wstaw **TagsMenuView(issue: issue)** do **IssueView**, gdzie wcześniej znajdował się stary kod **Menu**.
+
+To naprawdę jasny przykład mówienia, co chcemy osiągnąć, a nie opisywania wszystkich pojedynczych kroków – jeśli interesuje cię menu edycji tagów, możesz otworzyć tylko tę część kodu, natomiast jeśli przeglądasz resztę **IssueView**, teraz jest tam o wiele mniej bałaganu.
+
+Jeśli uważasz, że to pomocne, SwiftUI ma dość genialną sztuczkę w zanadrzu. Aby ją zobaczyć w akcji, otwórz **IssueViewToolbar** i dodaj to wewnątrz przycisku **Menu**:
+
+```swift
+Divider()
+
+Section("Tags") {
+    TagsMenuView(issue: issue)
+}
+```
+
+Gdy uruchomisz to z powrotem, zobaczysz, że SwiftUI automatycznie dostosowuje nasze **TagsMenuView** z menu wyskakującego do podmenu w toolbarze – tak łatwo jest ponownie użyć tego nowego widoku w innych miejscach.
+
+Zajmijmy się teraz dwoma wierszami listy, z których jeden jest trywialny, a drugi wymaga większego namysłu.
+
+Najpierw prostszy: wiersz listy, który obsługuje inteligentne filtry. Stwórz nowy widok SwiftUI o nazwie **SmartFilterRow**, a następnie przenieś nawigacyjny link filtrów inteligentnych do właściwości **body** nowego widoku. Będziesz musiał dodać nową właściwość **filter** do wiersza, jak ta:
+
+```swift
+var filter: Filter
+```
+
+A teraz kod **SidebarView** staje się prostszy:
+
+```swift
+Section("Smart Filters") {
+    ForEach(smartFilters, content: SmartFilterRow.init)
+}
+```
+
+To łatwiejsza z dwóch opcji. Nieco trudniejsze są wiersze tagów użytkownika, ponieważ to wymaga wywołań zwrotnych.
+
+Zacznij od stworzenia kolejnego nowego widoku SwiftUI, tym razem nazwanego **UserFilterRow**. Teraz przenieś nawigacyjny link filtrów użytkownika do właściwości **body** nowego widoku, a następnie ponownie dodaj tę samą właściwość **filter**:
+
+```swift
+var filter: Filter
+```
+
+Ale ta pojedyncza właściwość nie wystarczy, ponieważ mamy dwa przyciski do zmiany nazwy i usunięcia filtra. Moglibyśmy przenieść kod zmiany nazwy i filtra do wiersza, ale to robi się bałaganiarskie – musielibyśmy przenieść **completeRename()** również, wraz z właściwościami **tagToRename**, **renamingTag** i **tagName**. Nagle każdy wiersz w naszej liście znacznie się rozrasta!
+
+Łatwiejszą alternatywą jest przekazanie tych działań przycisków z powrotem do widoku nadrzędnego, co pozwala nam pozostawić resztę kodu bez zmian. To coś, do czego wrócimy w przyszłości, ale na razie możemy po prostu przekazać działania przycisków.
+
+Zacznij od dodania tych dwóch nowych właściwości do **UserFilterRow**:
+
+```swift
+var rename: (Filter) -> Void
+var delete: (Filter) -> Void
+```
+
+Oba wymagają funkcji, które akceptują filtr i nic nie zwracają, więc w **SidebarView** przekazujemy nasze istniejące metody **rename()** i **delete()** w ten sposób:
+
+```swift
+ForEach(tagFilters) { filter in
+    UserFilterRow(filter: filter, rename: rename, delete: delete)
+}
+```
+
+I to kończy drugi widok listy. Ponownie, wrócimy do tego w przyszłości, ale na razie to wystarczy.
+
+### Gdzie się zatrzymać?
+
+Zmiany, które wprowadziliśmy, przyniosły trzy rzeczy:
+
+- **Czytelność**: nasz kod jest mniej wysoki i mniej szeroki, więc jest bardziej prawdopodobne, że zobaczysz całą część układu bez przewijania.
+- **Możliwość ponownego
+-  użycia**: wyciągnięcie części drzewa widoku do własnej struktury pozwala nam ponownie użyć tej części naszego kodu w innych miejscach.
+  - **Testowalność**: wyciągnięcie kodu do metod umożliwia łatwiejsze wywoływanie tego kodu zewnętrznie, co jest idealne do testowania – coś, do czego wrócimy później.
+
+  To, co tu robimy, zależy od Ciebie. Pamiętaj, to Twój projekt i ważne jest, abyś mógł omówić swoje rozumowanie dotyczące struktury swojego kodu!
