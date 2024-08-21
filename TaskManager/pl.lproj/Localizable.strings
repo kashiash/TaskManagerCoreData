@@ -80,7 +80,8 @@
 
 /* WIDOK NAGRÓD */
 "Awards" = "Nagrody";
-
+"Locked" = "Zablokowane";
+"Unlocked" = "Odblokowano";
 
 /* DANE */
 "New tag" = "Nowy tag";
