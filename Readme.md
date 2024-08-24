@@ -3992,8 +3992,121 @@ I to kończy drugi widok listy. Ponownie, wrócimy do tego w przyszłości, ale 
 Zmiany, które wprowadziliśmy, przyniosły trzy rzeczy:
 
 - **Czytelność**: nasz kod jest mniej wysoki i mniej szeroki, więc jest bardziej prawdopodobne, że zobaczysz całą część układu bez przewijania.
-- **Możliwość ponownego
--  użycia**: wyciągnięcie części drzewa widoku do własnej struktury pozwala nam ponownie użyć tej części naszego kodu w innych miejscach.
-  - **Testowalność**: wyciągnięcie kodu do metod umożliwia łatwiejsze wywoływanie tego kodu zewnętrznie, co jest idealne do testowania – coś, do czego wrócimy później.
+
+- **Możliwość ponownego użycia**: wyciągnięcie części drzewa widoku do własnej struktury pozwala nam ponownie użyć tej części naszego kodu w innych miejscach.
+
+- **Testowalność**: wyciągnięcie kodu do metod umożliwia łatwiejsze wywoływanie tego kodu zewnętrznie, co jest idealne do testowania – coś, do czego wrócimy później.
 
   To, co tu robimy, zależy od Ciebie. Pamiętaj, to Twój projekt i ważne jest, abyś mógł omówić swoje rozumowanie dotyczące struktury swojego kodu!
+
+
+
+### `Lintowanie` naszego kodu
+
+ZAKTUALIZOWANE: Kod jest projektowany, aby był czytelny znacznie częściej niż jest pisany, a jednym z najprostszych sposobów na uczynienie kodu bardziej czytelnym jest utrzymanie jego jednolitości – upewnienie się, że nasz kod przestrzega prostego stylu, dzięki czemu mózg może skupić się mniej na odstępach i nazwach, a bardziej na zrozumieniu, jak kod rzeczywiście działa.
+
+### Wprowadzenie do SwiftLint
+
+Chociaż istnieje kilka narzędzi, które mogą pomóc w analizie Twojego kodu w Swift, zdecydowanie najpopularniejszym z nich jest SwiftLint. Jest darmowy i otwartoźródłowy, zdolny do wykrywania szerokiej gamy problemów stylistycznych, a także ogromnie konfigurowalny – nawet jeśli zdecydujesz się na inne narzędzie, SwiftLint jest doskonałym punktem wyjścia do zrozumienia procesu.
+
+Pierwszym krokiem do zainstalowania SwiftLint jest zainstalowanie Homebrew, który jest powszechnie używanym narzędziem do instalowania oprogramowania firm trzecich na macOS. Najnowsze instrukcje dotyczące instalacji Homebrew znajdziesz tutaj: [https://brew.sh](https://brew.sh) – uruchom tę komendę w terminalu, poczekaj kilka minut na zakończenie i gotowe.
+
+Teraz możesz zainstalować SwiftLint za pomocą Homebrew, wpisując komendę `brew install swiftlint`. To zainstaluje najnowszą wersję SwiftLint globalnie na Twoim Macu, co pozwoli Ci używać go w każdym innym projekcie w Swift, który stworzysz.
+
+### Naprawianie prostych rzeczy
+
+Teraz, gdy SwiftLint jest zainstalowany, użyj komendy `cd` w terminalu, aby przejść do katalogu, w którym znajduje się Twój projekt, a następnie uruchom `swiftlint` – bez specjalnych parametrów, tylko tyle. SwiftLint natychmiast przeskanuje cały kod w Swift znajdujący się w bieżącym katalogu, wraz z podkatalogami, a następnie przedstawi raport.
+
+Dokładny raport, który otrzymasz, prawdopodobnie nie będzie taki sam jak mój, chyba że ściśle podążałeś za moimi instrukcjami. Miałem 16 naruszeń, z których 3 były poważne, w 20 plikach mojego projektu. To trochę mniej niż jedno naruszenie na plik, co uważam za niezły wynik!
+
+Poświęć chwilę, aby przejrzeć naruszenia i zobaczyć, co o nich myślisz. Powinieneś zobaczyć takie rzeczy, jak:
+
+- Zbyt wiele znaków w jednej linii.
+- Nazwy identyfikatorów nie są wystarczająco długie.
+- Niepotrzebne parametry zamknięcia powinny być nazwane `_`.
+- Operatory powinny mieć jedną spację po obu stronach swoich nazw funkcji.
+
+To wszystko są drobne rzeczy, ale to dobrze, ponieważ celem jest stworzenie jednego stylu, który będzie przestrzegany w całym kodzie. Wierz mi: gdy pracujesz w większej bazie kodu, może być dość szokujące przechodzenie z jednego pliku do drugiego i widzenie zmieniającego się stylu kodu z powodu różnych osób, które nad nim pracowały.
+
+To powiedziawszy, nie zdziw się, jeśli znajdziesz wiele projektów, które nie stosują spójnego stylu kodowania – nawet oficjalne repozytorium Apple dla Swifta zawiera różnorodne wariacje, jeśli spróbujesz przepuścić bibliotekę standardową Swifta przez SwiftLint, możesz spodziewać się wielu naruszeń!
+
+**Wskazówka:** Gdy rozwiązuję problemy wykryte przez SwiftLint, zwykle naciskam Cmd+K w terminalu, aby wyczyścić wyjście, a następnie uruchamiam `swiftlint` ponownie – ułatwia to skupienie się na pozostałych problemach.
+
+### Naprawmy najłatwiejsze z nich od razu:
+
+1. Mamy ostrzeżenie, że parametr zamknięcia `storeDescription` nie jest używany w wywołaniu `loadPersistentStores()` w `DataController`, więc możemy po prostu zastąpić go `_`.
+2. W metodzie `createSampleData()` klasy `DataController` użyliśmy zmiennych o nazwach `i` i `j`, a SwiftLint chce, aby były one dłuższe. Są one używane tylko do danych tymczasowych, ale to łatwa poprawka, więc równie dobrze możemy to zrobić – zmień nazwę `i` na `tagCounter`, a `j` na `issueCounter`, upewniając się, że zmieniasz je we wszystkich miejscach, w których są używane.
+3. W `Bundle-Decodable.swift` przypadkowo dodałem dodatkową nową linię na końcu linii; SwiftLint chce dokładnie jednej, więc mogę po prostu usunąć tę dodatkową, aby usunąć kolejne naruszenie.
+
+**Wskazówka:** W `Award.swift` mamy właściwość o nazwie `id`, która jest oczywiście krótsza niż dwa znaki. Na szczęście SwiftLint ma wyjątek dla tej nazwy, ponieważ jest ona tak powszechna!
+
+### Naprawianie naruszeń związanych z długością linii
+
+Jest kilka naruszeń związanych z długością linii, z których niektóre można naprawić, dzieląc nasz kod na kilka linii.
+
+Na przykład w inicjalizatorze `DataController` mamy dwie linie kodu do monitorowania zmian zdalnych przychodzących z iCloud, z wyjątkowo długą nazwą stałej `NSPersistentStoreRemoteChangeNotificationPostOptionKey`, która powoduje szczególne problemy. Możemy naprawić te dwie długie linie w następujący sposób:
+
+```swift
+container.persistentStoreDescriptions.first?.setOption(
+    true as NSNumber,
+    forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey
+)
+
+NotificationCenter.default.addObserver(
+    forName: .NSPersistentStoreRemoteChange,
+    object: container.persistentStoreCoordinator,
+    queue: .main,
+    using: remoteStoreChanged
+)
+```
+
+Upodobanie Apple do długich nazw powoduje również naruszenie długości linii w `IssueViewToolbar`, z tą linią kodu:
+
+```swift
+Label(issue.completed ? "Re-open Issue" : "Close Issue", systemImage: "bubble.left.and.exclamationmark.bubble.right")
+```
+
+Jesteśmy raczej zmuszeni do korzystania z długiej nazwy obrazu SF Symbols, ale etykieta zawiera niewielką ilość logiki, którą pozostawiliśmy w naszym ciele widoku. To niewiele, ale nadal można to wyodrębnić do osobnej właściwości, jak poniżej:
+
+```swift
+var openCloseButtonText: LocalizedStringKey {
+    issue.completed ? "Re-open Issue" : "Close Issue"
+}
+```
+
+A teraz etykieta może używać tej właściwości zamiast obliczania logiki bezpośrednio w ciele właściwości:
+
+```swift
+Label(openCloseButtonText, systemImage: "bubble.left.and.exclamationmark.bubble.right")
+```
+
+To mała zmiana, ale przybliża nas trochę do całkowitego wyodrębnienia logiki z ciała naszego widoku, a także sprawia, że SwiftLint jest zadowolony!
+
+### Naprawianie długich linii kodu
+
+Ostatnie miejsce, gdzie długie nazwy Apple powodują problemy, to `issuesForSelectedFilter()` z jednym z naszych instancji `NSCompoundPredicate`:
+
+```swift
+let combinedPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [titlePredicate, contentPredicate])
+```
+
+Ponownie możemy po prostu podzielić to na kilka linii:
+
+```swift
+let combinedPredicate = NSCompoundPredicate(
+    orPredicateWithSubpredicates: [titlePredicate, contentPredicate]
+)
+```
+
+Są też miejsca, gdzie długie linie są spowodowane przez wiele parametrów, a rozwiązanie jest takie samo. Na przykład w `IssueView` nasze pole tekstowe opisu problemu można również podzielić na kilka linii:
+
+```swift
+TextField(
+    "Description",
+    text: $issue.issueContent,
+    prompt: Text("Enter the issue description here"),
+    axis: .vertical
+)
+```
+
+To tylko kilka przykładów, jak SwiftLint może pomóc nam w uporządkowaniu i ujednoliceniu kodu, co sprawia, że jest on bardziej czytelny i łatwiejszy do utrzymania.
